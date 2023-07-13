@@ -1,0 +1,11 @@
+
+# examples/data/
+data/
+
+
+
+.jupyter/
+.ipynb_checkpoints/
+__pycache__/
+
+.DS_Store
