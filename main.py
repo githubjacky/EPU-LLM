@@ -50,7 +50,7 @@ class EPUClassifier:
             responses[i] = response[1]
 
         labels = [i['label'] for i in data]
-        print(classification_report(labels, preds, zero_division=1.))
+        print( classification_report(labels, preds, zero_division = 1.) )
 
         self.articles = articles
         self.labels = labels
@@ -95,14 +95,14 @@ def main():
     半工半讀掙錢幫家裡，減輕媽媽經濟負擔
     """
     '''
-    example1_output = "1; Yes, it should be excluded. Although the article contains keywords, it has nothing to do with the Taiwan' economic environment."
+    example1_output = "1; Yes, it should be excluded. Although the article contains keywords, it has nothing to do with the Taiwan's economic environment."
 
     example2_input = f'''{question}
     """
     中國商業氣氛降至低點，習近平主導的中國市場「不再需要外國人了」
     """
     '''
-    example2_output = "1; Yes, it should be excluded, as It does not mention any economic policy uncertainty events in Taiwan."
+    example2_output = "1; Yes, it should be excluded, as it does not mention any economic policy uncertainty events in Taiwan."
 
     example3_input = f'''{question}
     """
@@ -110,7 +110,6 @@ def main():
     """
     '''
     example3_output = "0; NO, it shouldn't be excluded. It introduces the policy uncertainty of Taiwan."
-
 
     prompt = [
         {"role": "system", "content": persona},
