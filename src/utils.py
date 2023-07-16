@@ -1,14 +1,20 @@
-from typing import List, Dict, Optional
+from typing import List, Dict
 from pathlib import Path
 
+from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.schema import HumanMessage
-from langchain.prompts.chat import SystemMessagePromptTemplate
+from langchain.prompts.chat import (
+    SystemMessagePromptTemplate, 
+    HumanMessagePromptTemplate, 
+    ChatPromptTemplate
+)
 from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers import PydanticOutputParser
 
 from pydantic import BaseModel, Field
+from itertools import chain
 from tqdm import trange
 from sklearn.metrics import classification_report
 
@@ -17,8 +23,8 @@ import json
 
 
 class ClassificationResult(BaseModel):
-    pred: int = Field(description="prediction of whether the article you be excluded")
-    reason: str = Field(description="reason for such classification")
+    pred: int = Field(description = "If the given article is to be included, return 0; if not, return 1.")
+    reason: str = Field(description = "reason for why or why not it should be included for constructing EPU index")
 
 
 class Prompt():
@@ -26,18 +32,18 @@ class Prompt():
 
     {article}
 
-    Answer: {classify}
+    Response: {response}
     """
 
+    # suffix of the example prompt
     suffix = """Quesion: {question}
 
     {article}
 
-
     {format_instructions}
     """
 
-    parser = PydanticOutputParser(pydantic_object=ClassificationResult)
+    parser = PydanticOutputParser(pydantic_object = ClassificationResult)
 
     def __init__(self, 
                  country: str, 
@@ -46,67 +52,94 @@ class Prompt():
                  examples: List[Dict[str, str]], 
                 ):
 
-        self.system_message = SystemMessagePromptTemplate.from_template(system_message).format(country = country)
-
         example_prompt = PromptTemplate(
-            input_variables = ['article', 'classify'],
+            input_variables = ['article', 'response'],
             partial_variables = {'question': question},
             template = self.example_prompt_template
         )
 
-        self.fewshot_prompt = FewShotPromptTemplate(
+        fewshot_prompt = FewShotPromptTemplate(
+            input_variables = ['article'],
             examples = examples,
             example_prompt = example_prompt,
-            prefix = "Below are some examples.",
             suffix = self.suffix,
-            input_variables = ['article'],
-            partial_variables = {'question': question, 'format_instructions': self.parser.get_format_instructions()}
+            partial_variables = {
+                'question': question, 
+                'format_instructions': self.parser.get_format_instructions()
+            }
         )
 
+        messages = [ 
+            SystemMessagePromptTemplate.from_template(system_message).format(country = country),
+            HumanMessagePromptTemplate(prompt = fewshot_prompt)
+        ]
+
+        self.chat_message = ChatPromptTemplate(
+            input_variables = ['article'],
+            output_parser = self.parser,
+            messages = messages
+        )
 
 
 class EPUClassifier:
-    def __init__(self, prompt: Prompt, openai_api_key:Optional[str], model: str, temperature: int) -> None:
-        self.prompt = prompt
-        self.chat = ChatOpenAI(
-            openai_api_key = openai_api_key, model = model, temperature = temperature
+    def __init__(self, prompt: Prompt, model: str, temperature: float, batch_size:int) -> None:
+        self.batch_size = batch_size
+        llm = ChatOpenAI(
+            openai_api_key = os.getenv("OPENAI_API_KEY"), 
+            model = model, 
+            temperature = temperature
         )
+        self.chat = LLMChain(llm = llm, prompt = prompt.chat_message)
 
 
-    def preprocess(self, path: str) -> List[Dict]:
-        return json.loads( Path(path).read_text() )
+    def preprocess(self, source: str|List[Dict]) -> None:
+        if isinstance(source, str):
+            self.data = json.loads( Path(source).read_text() )
+        else:
+            self.data = source
 
-    def predict_instance(self, obs: Dict) -> ClassificationResult:
-        message  = [
-            self.prompt.system_message,
-            HumanMessage(content = self.prompt.fewshot_prompt.format(article = obs['article']))
+
+    def predict_instance(self, article: str) -> ClassificationResult:
+        return self.chat.predict_and_parse(article = article)
+    
+
+    def predict_batch(self, batch_articles: List[str]) -> List[ClassificationResult]:
+        input_list = [
+            {'article': i}
+            for i in batch_articles
         ]
-        response = self.chat(message)
-        
-        return self.prompt.parser.parse(response.content)
+        return self.chat.apply_and_parse(input_list)
 
 
-    def predict(self, path: str) -> None:
-        data = self.preprocess(path)
+
+    def predict(self) -> None:
+        n = len(self.data)
         predictions = []
 
-        for i in trange(len(data)):
-            predictions.append(self.predict_instance(data[i]))
+        if n >= self.batch_size:
 
-        labels = [i['label'] for i in data]
+            for idx in trange(0, n, self.batch_size):
+                articles = [
+                    i['article'] 
+                    for i in self.data[idx:min(idx+self.batch_size, n)]
+                ]
+                predictions.append(self.predict_batch(articles))
+
+            predictions = chain.from_iterable(predictions)
+        else:
+
+            for i in trange(n):
+                predictions.append(self.predict_instance(self.data[i]['article']))
+
         preds = [i.pred for i in predictions]
+        labels = [i['label'] for i in self.data]
         print( classification_report(labels, preds, zero_division = 1.) )
 
         self.predictions = predictions
 
 
     def output(self, path: str) -> None:
-        res = []
-        for i in range(len(self.predictions)):
-            res.append({
-                'pred': self.predictions[i].pred,
-                'response': self.predictions[i].reason
-            })
+        res = [json.loads(i.json()) for i in self.predictions]
 
         with open(path, 'w') as f:
             json.dump(res, f)
@@ -117,37 +150,40 @@ class Param(BaseModel):
     country = "Taiwan"
 
     system_message_template = '''\
-    As an economist working on constructing {country}'s Economic Policy Uncertainty Index (EPU index), your task is to identify articles that contain EPU keywords but should not be included when measuring Economic Policy Uncertainty. 
-    In other words, you need to identify the noise that should be excluded when constructing {country}'s EPU index. 
-    There are two aspects you need to consider. 
-    First, you need to determine whether the main idea of the article is introducing news that will impact {country}'s economic environment directly.
-    Both historical accounts and abstract subjective inferences should be considered as the noise. 
-    Second, you should assess whether the events mentioned in the article actually occur within {country}. 
-    If the events do not occur within {country}, they should be excluded. 
-    Your response should maintain a consistent style and consist of two parts separated by a semicolon. 
-    The first part should indicate whether the given article is considered to be noise and thus should be excluded, with a value of 1 for yes and 0 for no. 
-    The second part should provide your reason for such classification.
+    As an economist working on constructing {country}'s Economic Policy Uncertainty Index (EPU index), your task is to determine wheter the article should be included when measuring Economic Policy Uncertainty in {country}. 
+    Articles related to {country}'s economic environment and introducing the policy uncertainty in {country} should be considered useful for coustructing {country}'s EPU index.
+    Let me introduce you two criterion for determining wheter the given article should be included.
+    
+    Criterion1: 
+    determine whether the main idea of the article is introducing news that will impact {country}'s economic environment directly.
+    If it is, it should be included.
+    While both historical accounts and abstract subjective inferences should not be included
+
+    Criterion2:
+    assess whether the events mentioned in the article actually occur within {country}. 
+    If the events in article occur within {country}, it should be included. Others should not.
+    
+    Your response should maintain a consistent style and consist of two parts of json object. 
+    The first part should indicate whether the given article is should be included. 
+    Return 0 if it should be included while 1 for not. 
+    The second part should contains your reason for such classification.
     '''
 
     question = "Should the following article be excluded when constructing EPU index?" # quesion + article = query(langchain.HumanMessage)
+    # purpose of {{}} is to prevent error from formating the few shot example prompt
     examples = [
         {
-            'article': "半工半讀掙錢幫家裡，減輕媽媽經濟負擔",
-            'classify': "1; Yes, it should be excluded. Although the article contains keywords, it has nothing to do with the Taiwan's economic environment."
-        },
-        {
             'article': "中國商業氣氛降至低點，習近平主導的中國市場「不再需要外國人了」",
-            'classify': "1; Yes, it should be excluded, as it does not mention any economic policy uncertainty events in Taiwan."
-
+            'response': "{{'pred': 1, 'reason': 'Althoug the event might relate to Taiwna, it does not occur within Taiwan.'}}"
         },
         {
             'article': "美國聯準會與台灣經濟都有一個「6月難題」",
-            'classify': "0; NO, it shouldn't be excluded. It introduces the policy uncertainty of Taiwan."
+            'response': "{{'pred': 0, 'reason': 'It describes the policy uncertainty of Taiwan.'}}"
         }
     ]
-    openai_api_key = os.getenv("OPENAI_API_KEY")
     model = "gpt-3.5-turbo"
-    temperature = 0
+    temperature = 0.
+    batch_size = 64
     data_path = "./data/EPU_Noise_Examples.json"
     output_path = "./data/pred_Examples.json"
 

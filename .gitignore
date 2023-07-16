@@ -1,7 +1,7 @@
 
 # examples/data/
 data/
-
+.env
 
 
 .jupyter/

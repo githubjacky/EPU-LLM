@@ -8,7 +8,14 @@ mamba env create -f environment.yml
 mamba activate EPU_denoise
 ```
 
-## run
+
+# set up OpenAI AP key
 ```sh
-python main.py
+python src/create_env.py --openai_api_key {you api key}
+```
+
+
+## run the main script
+```sh
+python src/main.py
 ```

@@ -1,9 +1,14 @@
-from pydantic import BaseModel
+from dotenv import load_dotenv
 from utils import Prompt, EPUClassifier, Param
 
+from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 
+import json
+from pathlib import Path
 
 def main():
+    load_dotenv()
+    
     param = Param()
 
     prompt = Prompt(
@@ -15,11 +20,13 @@ def main():
 
     clf = EPUClassifier(
         prompt,
-        param.openai_api_key,
         param.model,
-        param.temperature
+        param.temperature,
+        param.batch_size
     )
-    clf.predict(param.data_path)
+
+    clf.preprocess(param.data_path)
+    clf.predict()
     clf.output(param.output_path)
 
     
