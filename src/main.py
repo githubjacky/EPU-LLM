@@ -1,10 +1,8 @@
 from dotenv import load_dotenv
 from utils import Prompt, EPUClassifier, Param
 
-from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
 
-import json
-from pathlib import Path
+
 
 def main():
     load_dotenv()

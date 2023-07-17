@@ -11,7 +11,7 @@ mamba activate EPU_denoise
 
 ## set up OpenAI API key
 ```sh
-python src/create_env.py --openai_api_key {you api key}
+python src/create_env.py --openai_api_key {your api key}
 ```
 
 

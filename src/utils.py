@@ -22,6 +22,7 @@ import os
 import json
 
 
+
 class ClassificationResult(BaseModel):
     pred: int = Field(description = "If the given article is to be included, return 0; if not, return 1.")
     reason: str = Field(description = "reason for why or why not it should be included for constructing EPU index")
@@ -111,13 +112,11 @@ class EPUClassifier:
         return self.chat.apply_and_parse(input_list)
 
 
-
     def predict(self) -> None:
         n = len(self.data)
         predictions = []
 
         if n >= self.batch_size:
-
             for idx in trange(0, n, self.batch_size):
                 articles = [
                     i['article'] 
@@ -127,7 +126,6 @@ class EPUClassifier:
 
             predictions = chain.from_iterable(predictions)
         else:
-
             for i in trange(n):
                 predictions.append(self.predict_instance(self.data[i]['article']))
 
@@ -140,10 +138,8 @@ class EPUClassifier:
 
     def output(self, path: str) -> None:
         res = [json.loads(i.json()) for i in self.predictions]
-
         with open(path, 'w') as f:
             json.dump(res, f)
-
 
 
 class Param(BaseModel):
@@ -186,4 +182,3 @@ class Param(BaseModel):
     batch_size = 64
     data_path = "./data/EPU_Noise_Examples.json"
     output_path = "./data/pred_Examples.json"
-
