@@ -3,8 +3,9 @@
 press="매일경제신문_한국경제"
 begin_date="2023-07-26"
 end_date="2023-07-29"
+interval=2
 
-while getopts ":p:b:n:" opt; do
+while getopts ":p:b:n:i:" opt; do
 	case $opt in
 	p)
 		press="$OPTARG"
@@ -15,10 +16,14 @@ while getopts ":p:b:n:" opt; do
 	e)
 		end_date="$OPTARG"
 		;;
+	i)
+		interval="$OPTARG"
+		;;
 	esac
 done
 
 python ./src/scrap/main.py \
 	--press "$press" \
 	--begin_date "$begin_date" \
-	--end_date "$end_date"
+	--end_date "$end_date" \
+	--interval "$interval"

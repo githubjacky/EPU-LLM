@@ -10,7 +10,7 @@ import pandas as pd
 import glob
 from pathlib import Path
 import warnings
-import shutil
+from shutil import rmtree
 
 
 def parse_args() -> Namespace:
@@ -29,6 +29,12 @@ def parse_args() -> Namespace:
         '--end_date',
         default="2023-07-29",
         type=lambda s: datetime.strptime(s, '%Y-%m-%d'),
+    )
+
+    parser.add_argument(
+        '--interval',
+        default=2,
+        type=int,
     )
     args = parser.parse_args()
     return args
@@ -53,21 +59,22 @@ def datetime_to_str(d: datetime):
     return f"{d.year}-{add_zero(d.month)}-{add_zero(d.day)}"
 
 
-def create_period(begin_date: datetime, end_date: datetime):
-    duration = (end_date - begin_date).days
-    valid = duration % 2 != 0  # odd is valid
-    num_period = (duration + 1) // 2 if valid else duration // 2 + 1
+def create_period(begin_date: datetime, end_date: datetime, interval: int):
+    days = (end_date - begin_date).days + 1
+    rem = days % interval
+    valid = rem == 0
+    num_period = days // interval if valid else days // interval + 1
 
     begin_date_list = []
     end_date_list = []
-    begin = end_date - timedelta(days=1)
+    begin = end_date - timedelta(days=interval-1)
     end = end_date
     for _ in range(num_period):
         begin_date_list.append(datetime_to_str(begin))
         end_date_list.append(datetime_to_str(end))
 
-        begin = begin - timedelta(days=2)
-        end = end - timedelta(days=2)
+        begin -= timedelta(days=interval)
+        end -= timedelta(days=interval)
 
     return begin_date_list, end_date_list
 
@@ -81,7 +88,7 @@ def download(output_dir: Path,
              ):
 
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         page.goto('https://www.bigkinds.or.kr/v2/news/index.do')
 
@@ -104,14 +111,26 @@ def download(output_dir: Path,
             page.fill('input#search-end-date', end_date)
             page.click('button.news-report-search-btn')
 
-            # step3: download
+            # step3: download(try 5 times at most)
+            attempt = 0
+            download_info = None
             page.click('button#collapse-step-3')
-            with page.expect_download() as download_info:
-                page.click('button.mobile-excel-download')
-            download = download_info.value
-            download.save_as(
-                f'./{output_dir}/{keyword}_{begin_date}_{end_date}.xlsx'
-            )
+            while attempt < 5:
+                try:
+                    with page.expect_download(timeout=3000000) as download_info:
+                        page.click(
+                            'button.mobile-excel-download',
+                            timeout=3000000
+                        )
+                    break
+                except TimeoutError:
+                    attempt += 1
+
+            if download_info is not None:
+                download = download_info.value
+                download.save_as(
+                    f'./{output_dir}/{keyword}_{begin_date}_{end_date}.xlsx'
+                )
 
             # step4: rerun the whole process
             page.click('button#collapse-step-1')
@@ -119,7 +138,7 @@ def download(output_dir: Path,
 
 def main(args):
     begin_date_list, end_date_list = create_period(
-        args.begin_date, args.end_date
+        args.begin_date, args.end_date, args.interval
     )
 
     load_dotenv()
@@ -137,6 +156,8 @@ def main(args):
 
     output_dir = Path('./data/scrap_bigkinds_temp')
     output_dir.mkdir(parents=True, exist_ok=True)
+    if output_dir.exists():
+        rmtree(output_dir)
     keyword = join_press(args.press)
     download(
         output_dir,
@@ -166,7 +187,7 @@ def main(args):
         index=False
     )
 
-    shutil.rmtree(output_dir, ignore_errors=True)
+    rmtree(output_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

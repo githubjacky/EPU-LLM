@@ -13,9 +13,10 @@ mamba activate EPU_denoise
 - `p`: press
 - `b`: begin date
 - `e`: end date
+- `i`: number of days to query eachtime
 - default configuration:
 ```{bash}
-./scrap -p 매일경제신문_한국경제 -b 2023-07-26 -e 2023-07-29
+./scrap -p 매일경제신문_한국경제 -b 2023-07-26 -e 2023-07-29 -i 2
 ```
 
 
