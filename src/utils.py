@@ -3,10 +3,9 @@ from pathlib import Path
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import HumanMessage
 from langchain.prompts.chat import (
-    SystemMessagePromptTemplate, 
-    HumanMessagePromptTemplate, 
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
     ChatPromptTemplate
 )
 from langchain.prompts.few_shot import FewShotPromptTemplate
@@ -22,10 +21,11 @@ import os
 import json
 
 
-
 class ClassificationResult(BaseModel):
-    pred: int = Field(description = "If the given article is to be included, return 0; if not, return 1.")
-    reason: str = Field(description = "reason for why or why not it should be included for constructing EPU index")
+    pred: int = Field(
+        description="If the given article is to be included, return 0; if not, return 1.")
+    reason: str = Field(
+        description="reason for why or why not it should be included for constructing EPU index")
 
 
 class Prompt():
@@ -44,65 +44,63 @@ class Prompt():
     {format_instructions}
     """
 
-    parser = PydanticOutputParser(pydantic_object = ClassificationResult)
+    parser = PydanticOutputParser(pydantic_object=ClassificationResult)
 
-    def __init__(self, 
-                 country: str, 
+    def __init__(self,
+                 country: str,
                  system_message: str,
                  question: str,
-                 examples: List[Dict[str, str]], 
-                ):
+                 examples: List[Dict[str, str]],
+                 ):
 
         example_prompt = PromptTemplate(
-            input_variables = ['article', 'response'],
-            partial_variables = {'question': question},
-            template = self.example_prompt_template
+            input_variables=['article', 'response'],
+            partial_variables={'question': question},
+            template=self.example_prompt_template
         )
 
         fewshot_prompt = FewShotPromptTemplate(
-            input_variables = ['article'],
-            examples = examples,
-            example_prompt = example_prompt,
-            suffix = self.suffix,
-            partial_variables = {
-                'question': question, 
+            input_variables=['article'],
+            examples=examples,
+            example_prompt=example_prompt,
+            suffix=self.suffix,
+            partial_variables={
+                'question': question,
                 'format_instructions': self.parser.get_format_instructions()
             }
         )
 
-        messages = [ 
-            SystemMessagePromptTemplate.from_template(system_message).format(country = country),
-            HumanMessagePromptTemplate(prompt = fewshot_prompt)
+        messages = [
+            SystemMessagePromptTemplate.from_template(
+                system_message).format(country=country),
+            HumanMessagePromptTemplate(prompt=fewshot_prompt)
         ]
 
         self.chat_message = ChatPromptTemplate(
-            input_variables = ['article'],
-            output_parser = self.parser,
-            messages = messages
+            input_variables=['article'],
+            output_parser=self.parser,
+            messages=messages
         )
 
 
 class EPUClassifier:
-    def __init__(self, prompt: Prompt, model: str, temperature: float, batch_size:int) -> None:
+    def __init__(self, prompt: Prompt, model: str, temperature: float, batch_size: int) -> None:
         self.batch_size = batch_size
         llm = ChatOpenAI(
-            openai_api_key = os.getenv("OPENAI_API_KEY"), 
-            model = model, 
-            temperature = temperature
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            model=model,
+            temperature=temperature
         )
-        self.chat = LLMChain(llm = llm, prompt = prompt.chat_message)
+        self.chat = LLMChain(llm=llm, prompt=prompt.chat_message)
 
-
-    def preprocess(self, source: str|List[Dict]) -> None:
+    def preprocess(self, source: str | List[Dict]) -> None:
         if isinstance(source, str):
-            self.data = json.loads( Path(source).read_text() )
+            self.data = json.loads(Path(source).read_text())
         else:
             self.data = source
 
-
     def predict_instance(self, article: str) -> ClassificationResult:
-        return self.chat.predict_and_parse(article = article)
-    
+        return self.chat.predict_and_parse(article=article)
 
     def predict_batch(self, batch_articles: List[str]) -> List[ClassificationResult]:
         input_list = [
@@ -111,7 +109,6 @@ class EPUClassifier:
         ]
         return self.chat.apply_and_parse(input_list)
 
-
     def predict(self) -> None:
         n = len(self.data)
         predictions = []
@@ -119,7 +116,7 @@ class EPUClassifier:
         if n >= self.batch_size:
             for idx in trange(0, n, self.batch_size):
                 articles = [
-                    i['article'] 
+                    i['article']
                     for i in self.data[idx:min(idx+self.batch_size, n)]
                 ]
                 predictions.append(self.predict_batch(articles))
@@ -127,14 +124,14 @@ class EPUClassifier:
             predictions = chain.from_iterable(predictions)
         else:
             for i in trange(n):
-                predictions.append(self.predict_instance(self.data[i]['article']))
+                predictions.append(
+                    self.predict_instance(self.data[i]['article']))
 
         preds = [i.pred for i in predictions]
         labels = [i['label'] for i in self.data]
-        print( classification_report(labels, preds, zero_division = 1.) )
+        print(classification_report(labels, preds, zero_division=1.))
 
         self.predictions = predictions
-
 
     def output(self, path: str) -> None:
         res = [json.loads(i.json()) for i in self.predictions]
@@ -165,7 +162,8 @@ class Param(BaseModel):
     The second part should contains your reason for such classification.
     '''
 
-    question = "Should the following article be excluded when constructing EPU index?" # quesion + article = query(langchain.HumanMessage)
+    # quesion + article = query(langchain.HumanMessage)
+    question = "Should the following article be excluded when constructing EPU index?"
     # purpose of {{}} is to prevent error from formating the few shot example prompt
     examples = [
         {
@@ -179,6 +177,6 @@ class Param(BaseModel):
     ]
     model = "gpt-3.5-turbo"
     temperature = 0.
-    batch_size = 64
-    data_path = "./data/EPU_Noise_Examples.json"
-    output_path = "./data/pred_Examples.json"
+    batch_size = 128
+    data_path = "./data/EPU_Noise_Test.json"
+    output_path = "./data/pred_Test.json"

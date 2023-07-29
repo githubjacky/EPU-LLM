@@ -8,6 +8,16 @@ mamba env create -f environment.yml
 mamba activate EPU_denoise
 ```
 
+## download data from BigKinds 
+*arguments has the restricted format*
+- `p`: press
+- `b`: begin date
+- `e`: end date
+- default configuration:
+```{bash}
+./scrap -p 매일경제신문_한국경제 -b 2023-07-26 -e 2023-07-29
+```
+
 
 ## set up OpenAI API key
 ```sh

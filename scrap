@@ -1,0 +1,24 @@
+#!/bin/sh
+
+press="매일경제신문_한국경제"
+begin_date="2023-07-26"
+end_date="2023-07-29"
+
+while getopts ":p:b:n:" opt; do
+	case $opt in
+	p)
+		press="$OPTARG"
+		;;
+	b)
+		begin_date="$OPTARG"
+		;;
+	e)
+		end_date="$OPTARG"
+		;;
+	esac
+done
+
+python ./src/scrap/main.py \
+	--press "$press" \
+	--begin_date "$begin_date" \
+	--end_date "$end_date"
