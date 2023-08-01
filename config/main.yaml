@@ -1,0 +1,15 @@
+hydra:
+    output_subdir: null  
+    run:
+      dir: .
+
+defaults:
+    - model: chatgpt_3.5_turbo
+    - process: scraping
+    - _self_
+
+
+data:
+    raw: data/raw/
+    processed: data/processed/
+    predict: data/predict/

@@ -1,0 +1,6 @@
+press: 매일경제신문_한국경제
+begin_date: 1997-01-01
+end_date: 2023-07-29
+interval: 30
+headless: True
+timeout: 60000

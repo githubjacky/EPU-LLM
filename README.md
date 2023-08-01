@@ -1,32 +1,53 @@
-# EPU_denoise
+# epu_denoise
 
+## Tools used in this project
+* [Poetry](https://towardsdatascience.com/how-to-effortlessly-publish-your-python-package-to-pypi-using-poetry-44b305362f9f): Dependency management - [article](https://mathdatasimplified.com/2023/06/12/poetry-a-better-way-to-manage-python-dependencies/)
+* [hydra](https://hydra.cc/): Manage configuration files - [article](https://mathdatasimplified.com/2023/05/25/stop-hard-coding-in-a-data-science-project-use-configuration-files-instead/)
+* [pre-commit plugins](https://pre-commit.com/): Automate code reviewing formatting
+* [DVC](https://dvc.org/): Data version control - [article](https://mathdatasimplified.com/2023/02/20/introduction-to-dvc-data-version-control-tool-for-machine-learning-projects-2/)
+* [pdoc](https://github.com/pdoc3/pdoc): Automatically create an API documentation for your project
 
-## set up environment
-*if you are using `conda`, replace `mamaba` with `conda`*
-```sh
-mamba env create -f environment.yml
-mamba activate EPU_denoise
+## Set up the environment
+1. Install [Poetry](https://python-poetry.org/docs/#installation)
+2. Set up the environment:
+```bash
+make env 
 ```
 
-## download data from BigKinds 
-*arguments has the restricted format*
-- `p`: press
-- `b`: begin date
-- `e`: end date
-- `i`: number of days to query eachtime
-- default configuration:
-```{bash}
-./scrap -p 매일경제신문_한국경제 -b 2023-07-26 -e 2023-07-29 -i 2
+## Install dependencies
+To install all dependencies for this project, run:
+```bash
+poetry install
 ```
 
-
-## set up OpenAI API key
-```sh
-python src/create_env.py --openai_api_key {your api key}
+To install a new package, run:
+```bash
+poetry add <package-name>
 ```
 
+## Version your data
+To track changes to the "data" directory, type:
+```bash
+dvc add data
+```
 
-## run the main script
-```sh
-python src/main.py
+This command will create the "data.dvc" file, which contains a unique identifier and the location of the data directory in the file system.
+
+To keep track of the data associated with a particular version, commit the "data.dvc" file to Git:
+```bash
+git add data.dvc
+git commit -m "add data"
+```
+
+To push the data to remote storage, type:
+```bash
+dvc push 
+```
+
+## Auto-generate API documentation
+
+To auto-generate API document for your project, run:
+
+```bash
+make docs
 ```
