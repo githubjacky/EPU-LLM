@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from posixpath import exists
 from dotenv import load_dotenv
 import glob
 import hydra
@@ -96,7 +97,11 @@ class Scrapper():
             # step2-1: search with press as keywords
             page.fill('input#total-search-key', self.keyword)
             page.click('a:has-text("기간")')
-
+            temp_folder = self.output_dir / 'temp'
+            if temp_folder.exists():
+                rmtree(temp_folder)
+            else:
+                temp_folder.mkdir(parents=True, exist_ok=True)
             for t in trange(len(self.period['begin'])):
                 # step2-2: select the period
                 begin = self.period['begin'][t]
@@ -114,7 +119,7 @@ class Scrapper():
 
                 # step3-2: download(try 5 times at most)
                 page.click('button#collapse-step-3')
-                res_path = self.output_dir / 'temp' / f'{begin}_{end}.xlsx'
+                res_path = temp_folder / f'{begin}_{end}.xlsx'
                 with page.expect_download(timeout=self.timeout) as d:
                     page.click(
                         '#analytics-data-download > div.btm-btn-wrp > button'
@@ -133,8 +138,10 @@ class Scrapper():
 
         for file in filenames:
             df = pd.concat(
-                [df, pd.read_excel(
-                    file, sheet_name="sheet", engine='openpyxl')],
+                [
+                    df,
+                    pd.read_excel(file, sheet_name="sheet", engine='openpyxl')
+                ],
                 ignore_index=True,
                 sort=False
             )
@@ -179,10 +186,7 @@ def main(cfg: DictConfig) -> None:
     email, password = env_setup()
 
     output_dir = Path(cfg.data.raw) / 'bigkinds'
-    if output_dir.exists():
-        rmtree(output_dir)
-    else:
-        output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     scrapper = Scrapper(
         cfg.process.press,
@@ -202,6 +206,7 @@ def main(cfg: DictConfig) -> None:
     scrapper.download(email, password)
     logger.info("start merging files")
     scrapper.merge()
+    logger.info("finish the process")
 
 
 if __name__ == "__main__":
