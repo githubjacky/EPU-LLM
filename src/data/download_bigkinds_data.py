@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from posixpath import exists
 from dotenv import load_dotenv
 import glob
 import hydra
