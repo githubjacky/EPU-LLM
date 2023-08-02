@@ -8,18 +8,13 @@
 * [DVC](https://dvc.org/): Data version control - [article](https://mathdatasimplified.com/2023/02/20/introduction-to-dvc-data-version-control-tool-for-machine-learning-projects-2/)
 * [pdoc](https://github.com/pdoc3/pdoc): Automatically create an API documentation for your project
 
-## Set up the environment
+## Set up the environment and Install dependencies
 1. Install [Poetry](https://python-poetry.org/docs/#installation)
 2. Set up the environment:
 ```bash
-make env 
+make dependencies
 ```
 
-## Install dependencies
-To install all dependencies for this project, run:
-```bash
-poetry install
-```
 
 ## scrap the [bigkinds](https://www.bigkinds.or.kr/v2/news/index.do)
 1. modify the configuration file in *config/porcess/scrapping.yaml*

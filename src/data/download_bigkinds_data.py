@@ -179,7 +179,7 @@ def env_setup() -> tuple[str, str]:
     return email, password
 
 
-@ hydra.main(config_path='../../config', config_name='main', version_base=None)
+@hydra.main(config_path='../../config', config_name='main', version_base=None)
 def main(cfg: DictConfig) -> None:
     logger.info("setting up the environment variable")
     email, password = env_setup()

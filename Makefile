@@ -14,6 +14,9 @@ env: dependencies
 download:
 	poetry run python src/data/download_bigkinds_data.py
 
+predict:
+	poetry run python src/predict.py
+
 tests:
 	pytest
 

@@ -1,26 +1,48 @@
-from prompt import Prompt
+from itertools import chain
+import json
+from langchain.chains import LLMChain
+from langchain.chat_models import ChatOpenAI
+from pathlib import Path
+from sklearn.metrics import classification_report
+from tqdm import trange
+from typing import List, Dict
+
+from .utils import Prompt, ClassificationResult
 
 
 class ChatGPT:
-    def __init__(self, prompt: Prompt, model: str, temperature: float, batch_size: int) -> None:
-        self.batch_size = batch_size
+    def __init__(self,
+                 prompt: Prompt,
+                 key: str,
+                 model: str,
+                 temperature: float,
+                 batch_size: int,
+                 data: Path | List[Dict]
+                 ) -> None:
         llm = ChatOpenAI(
-            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            openai_api_key=key,
             model=model,
             temperature=temperature
         )
-        self.chat = LLMChain(llm=llm, prompt=prompt.chat_message)
+        self.chat = LLMChain(
+            llm=llm,
+            prompt=prompt.chat_message,
+            output_parser=prompt.parser
+        )
 
-    def preprocess(self, source: str | List[Dict]) -> None:
-        if isinstance(source, str):
-            self.data = json.loads(Path(source).read_text())
+        self.batch_size = batch_size
+
+        if isinstance(data, Path):
+            self.data = json.loads(data.read_text())
         else:
-            self.data = source
+            self.data = data
 
     def predict_instance(self, article: str) -> ClassificationResult:
-        return self.chat.predict_and_parse(article=article)
+        return self.chat.run(article=article)
 
-    def predict_batch(self, batch_articles: List[str]) -> List[ClassificationResult]:
+    def predict_batch(self,
+                      batch_articles: List[str]
+                      ) -> List[ClassificationResult]:
         input_list = [
             {'article': i}
             for i in batch_articles
@@ -51,7 +73,7 @@ class ChatGPT:
 
         self.predictions = predictions
 
-    def output(self, path: str) -> None:
+    def output(self, path: Path) -> None:
         res = [json.loads(i.json()) for i in self.predictions]
         with open(path, 'w') as f:
             json.dump(res, f)

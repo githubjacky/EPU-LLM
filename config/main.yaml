@@ -4,7 +4,7 @@ hydra:
       dir: .
 
 defaults:
-    - model: chatgpt_3.5_turbo
+    - model: chatgpt
     - process: scraping
     - _self_
 

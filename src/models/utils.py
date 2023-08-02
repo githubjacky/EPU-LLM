@@ -1,30 +1,38 @@
-from typing import List, Dict
-from pathlib import Path
-
-from langchain.chains import LLMChain
+from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain.prompts import PromptTemplate
 from langchain.prompts.chat import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
     ChatPromptTemplate
 )
-from langchain.prompts.few_shot import FewShotPromptTemplate
-from langchain.chat_models import ChatOpenAI
-from langchain.output_parsers import PydanticOutputParser
-
 from pydantic import BaseModel, Field
-from itertools import chain
-from tqdm import trange
-from sklearn.metrics import classification_report
-
-import os
-import json
 
 
-class Param(BaseModel):
-    country = "Taiwan"
+class ClassificationResult(BaseModel):
+    pred: int = Field(
+        description="If the given article is to be included, return 0; if not, return 1.")
+    reason: str = Field(
+        description="reason for why or why not it should be included for constructing EPU index")
 
-    system_message_template = '''\
+
+class Prompt():
+    example_prompt_template = """Quesion: {question}
+
+    {article}
+
+    Response: {response}
+    """
+
+    # suffix of the example prompt
+    suffix = """Quesion: {question}
+
+    {article}
+
+    {format_instructions}
+    """
+
+    system_message = '''\
     As an economist working on constructing {country}'s Economic Policy Uncertainty Index (EPU index), your task is to determine wheter the article should be included when measuring Economic Policy Uncertainty in {country}. 
     Articles related to {country}'s economic environment and introducing the policy uncertainty in {country} should be considered useful for coustructing {country}'s EPU index.
     Let me introduce you two criterion for determining wheter the given article should be included.
@@ -44,9 +52,8 @@ class Param(BaseModel):
     The second part should contains your reason for such classification.
     '''
 
-    # quesion + article = query(langchain.HumanMessage)
     question = "Should the following article be excluded when constructing EPU index?"
-    # purpose of {{}} is to prevent error from formating the few shot example prompt
+
     examples = [
         {
             'article': "中國商業氣氛降至低點，習近平主導的中國市場「不再需要外國人了」",
@@ -57,8 +64,37 @@ class Param(BaseModel):
             'response': "{{'pred': 0, 'reason': 'It describes the policy uncertainty of Taiwan.'}}"
         }
     ]
-    model = "gpt-3.5-turbo"
-    temperature = 0.
-    batch_size = 128
-    data_path = "./data/EPU_Noise_Test.json"
-    output_path = "./data/pred_Test.json"
+
+    parser = PydanticOutputParser(pydantic_object=ClassificationResult)
+
+    def __init__(self, country: str) -> None:
+
+        example_prompt = PromptTemplate(
+            input_variables=['article', 'response'],
+            partial_variables={'question': self.question},
+            template=self.example_prompt_template
+        )
+
+        fewshot_prompt = FewShotPromptTemplate(
+            input_variables=['article'],
+            examples=self.examples,
+            example_prompt=example_prompt,
+            suffix=self.suffix,
+            partial_variables={
+                'question': self.question,
+                'format_instructions': self.parser.get_format_instructions()
+            }
+        )
+
+        messages = [
+            SystemMessagePromptTemplate.from_template(
+                self.system_message
+            ).format(country=country),
+            HumanMessagePromptTemplate(prompt=fewshot_prompt)
+        ]
+
+        self.chat_message = ChatPromptTemplate(
+            input_variables=['article'],
+            output_parser=self.parser,
+            messages=messages
+        )
