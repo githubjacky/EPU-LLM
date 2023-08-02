@@ -1,3 +1,6 @@
+# raw data
+data/raw/examples_taiwanese/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
