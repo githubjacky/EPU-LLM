@@ -1,5 +1,6 @@
-press: 매일경제신문_한국경제
-begin_date: 1997-01-01
+method: by_press
+press: 경향신문_한겨레_한국일보_매일경제_한국경제
+begin_date: 2022-07-29
 end_date: 2023-07-29
 interval: 30
 headless: True

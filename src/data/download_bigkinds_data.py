@@ -16,7 +16,6 @@ import warnings
 
 class Scrapper():
     def __init__(self,
-                 press: str,
                  begin: str,
                  end: str,
                  interval: int,
@@ -24,24 +23,12 @@ class Scrapper():
                  timeout: int,
                  output_dir: Path
                  ) -> None:
-        self.press = press
         self.begin = begin
         self.end = end
         self.interval = interval
         self.headless = headless
         self.timeout = timeout
         self.output_dir = output_dir
-
-    @property
-    def keyword(self) -> str:
-        press_list = self.press.split('_')
-        keyword = "("
-        for i in range(len(press_list)-1):
-            keyword += (f"({press_list[i]})OR")
-
-        keyword += f"({press_list[-1]}))"
-
-        return keyword
 
     @property
     def begin_date(self) -> datetime:
@@ -77,59 +64,81 @@ class Scrapper():
 
         return period_dict
 
-    def download(self,
-                 email: str,
-                 password: str,
-                 ) -> None:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.headless)
-            page = browser.new_page()
-            page.goto('https://www.bigkinds.or.kr/v2/news/index.do')
+    def create_page(self):
+        p = sync_playwright().start()
+        browser = p.chromium.launch(headless=self.headless)
+        page = browser.new_page()
+        self.page = page
 
-            # step1:login
-            # note: do not use: button[type=button]
-            page.click('div.login-area')
-            page.fill('input#login-user-id', email)
-            page.fill('input#login-user-password', password)
-            page.click('button[type=submit]')
+        self.page.goto('https://www.bigkinds.or.kr/v2/news/index.do')
 
-            # step2-1: search with press as keywords
-            page.fill('input#total-search-key', self.keyword)
-            page.click('a:has-text("기간")')
-            temp_folder = self.output_dir / 'temp'
-            if temp_folder.exists():
-                rmtree(temp_folder)
-            else:
-                temp_folder.mkdir(parents=True, exist_ok=True)
-            for t in trange(len(self.period['begin'])):
-                # step2-2: select the period
-                begin = self.period['begin'][t]
-                end = self.period['end'][t]
-                page.fill('input#search-begin-date', begin)
-                page.fill('input#search-end-date', end)
-                page.click('button.news-report-search-btn')
+    def login(self, email: str, password: str):
+        # note: do not use: button[type=button]
+        self.page.click('div.login-area')
+        self.page.fill('input#login-user-id', email)
+        self.page.fill('input#login-user-password', password)
+        self.page.click('button[type=submit]')
 
-                # step3-1: check if the number of articles exceed 20,000
-                num_article = page.locator(
-                    '#news-results-tab > div:nth-child(3) > h3 > span.total-news-cnt'
-                ).inner_text()
-                if int(num_article.replace(',', '')) > 20000:
-                    logger.warning("the number of articles exceed the limit")
+    def trace(self, temp_folder, press):
+        self.page.click('a:has-text("기간")')
+        for t in trange(len(self.period['begin'])):
+            # select the period
+            begin = self.period['begin'][t]
+            end = self.period['end'][t]
+            self.page.fill('input#search-begin-date', begin)
+            self.page.fill('input#search-end-date', end)
+            self.page.click('button.news-report-search-btn')
 
-                # step3-2: download(try 5 times at most)
-                page.click('button#collapse-step-3')
-                res_path = temp_folder / f'{begin}_{end}.xlsx'
-                with page.expect_download(timeout=self.timeout) as d:
-                    page.click(
-                        '#analytics-data-download > div.btm-btn-wrp > button'
-                    )
-                download = d.value
-                download.save_as(res_path)
+            # check if the number of articles exceed 20,000
+            num_article = self.page.locator(
+                '#news-results-tab > div:nth-child(3) > h3 > span.total-news-cnt'
+            ).inner_text()
+            if int(num_article.replace(',', '')) > 20000:
+                logger.warning("the number of articles exceed the limit")
 
-                # step4: rerun the whole process
-                page.click('button#collapse-step-1')
+            # download
+            self.page.click('button#collapse-step-3')
+            res_path = temp_folder / f'{begin}_{end}_{press}.xlsx'
+            with self.page.expect_download(timeout=self.timeout) as d:
+                self.page.click(
+                    '#analytics-data-download > div.btm-btn-wrp > button'
+                )
+            download = d.value
+            download.save_as(res_path)
 
-    def merge(self) -> None:
+            # rerun the whole process
+            self.page.click('button#collapse-step-1')
+
+    def download_by_press(self, press: str, prev_press=None) -> None:
+        temp_folder = self.output_dir / 'temp'
+        if temp_folder.exists():
+            rmtree(temp_folder)
+        else:
+            temp_folder.mkdir(parents=True, exist_ok=True)
+
+        # select the press
+        if prev_press is not None:
+            self.page.click('a:has-text("언론사")')
+            self.page.click(f'label:has-text("{prev_press}")')
+        self.page.click(f'label:has-text("{press}")')
+
+        # trace and dowload
+        self.trace(temp_folder, press)
+
+    def download_by_multi_press(self, batch_press: List[str]) -> None:
+        temp_folder = self.output_dir / 'temp'
+        if temp_folder.exists():
+            rmtree(temp_folder)
+        else:
+            temp_folder.mkdir(parents=True, exist_ok=True)
+
+        # select the press
+        for press in batch_press:
+            self.page.click(f'label:has-text("{press}")')
+            # trace and dowload
+        self.trace(temp_folder, '_'.join(batch_press))
+
+    def merge(self, label) -> None:
         warnings.simplefilter("ignore")
         temp_dir = self.output_dir / 'temp'
         filenames = sorted(glob.glob(path.join(temp_dir, "*.xlsx")))
@@ -146,7 +155,7 @@ class Scrapper():
             )
 
         res_file = '_'.join((
-            self.keyword,
+            label,
             self.__datetime_to_str(self.begin_date),
             self.__datetime_to_str(self.end_date),
         )) + '.xlsx'
@@ -188,7 +197,6 @@ def main(cfg: DictConfig) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     scrapper = Scrapper(
-        cfg.process.press,
         cfg.process.begin_date,
         cfg.process.end_date,
         cfg.process.interval,
@@ -202,10 +210,23 @@ def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg_detail['process']))
 
     logger.info("start scrapping")
-    scrapper.download(email, password)
-    logger.info("start merging files")
-    scrapper.merge()
-    logger.info("finish the process")
+    scrapper.create_page()
+    scrapper.login(email, password)
+
+    if cfg.process.method == 'by_press':
+        prev_press = None
+        for press in cfg.process.press.split('_'):
+            scrapper.download_by_press(press, prev_press)
+            logger.info("start merging files")
+            scrapper.merge(press)
+            logger.info("finish the process")
+            prev_press = press
+    else:
+        batch_press = cfg.process.press.split('_')
+        scrapper.download_by_multi_press(batch_press)
+        logger.info("start merging files")
+        scrapper.merge('_'.join(batch_press))
+        logger.info("finish the process")
 
 
 if __name__ == "__main__":
