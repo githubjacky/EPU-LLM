@@ -1,5 +1,6 @@
 outs:
-- md5: 6ffbaaad7b4ac6e1afabed19a80b2560.dir
+- md5: d751713988987e9331980363e24189ce.dir
   size: 0
-  nfiles: 1
+  nfiles: 0
   path: chatgpt
+  hash: md5

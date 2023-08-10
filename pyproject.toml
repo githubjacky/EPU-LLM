@@ -11,14 +11,19 @@ hydra-core = "^1.1.1"
 pdoc3 = "^0.10.0"
 playwright = "^1.36.0"
 python-dotenv = "^1.0.0"
-pandas = "^2.0.3"
 openpyxl = "^3.1.2"
 loguru = "^0.7.0"
 langchain = {extras = ["llms"], version = "^0.0.249"}
+polars = "^0.18.12"
+xlsx2csv = "^0.8.1"
+pandas = "^2.0.3"
+orjson = "^3.9.4"
+httpx = "^0.24.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.2.5"
 pre-commit = "^2.17.0"
+ipykernel = "^6.25.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

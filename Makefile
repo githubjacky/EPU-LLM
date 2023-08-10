@@ -12,7 +12,7 @@ env: dependencies
 	poetry shell
 
 download:
-	poetry run python src/data/download_bigkinds_data.py
+	poetry run python src/data/download.py
 
 predict:
 	poetry run python src/predict.py

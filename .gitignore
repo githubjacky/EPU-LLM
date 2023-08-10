@@ -1,5 +1,5 @@
 # raw data
-data/raw/examples_taiwanese/
+data/raw/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
