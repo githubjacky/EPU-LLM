@@ -1,0 +1,40 @@
+# mode: playwrigtht
+mode: httpx
+
+playwright:
+  press:
+    # - 경향신문
+    # - 한겨레
+    # - 한국일보
+    # - 매일경제
+    - 한국경제
+  begin_date: 1991-01-01
+  end_date: 2003-11-08
+  interval: 3
+  headless: False
+  timeout: 300000
+
+httpx:
+  press:
+    # - 경향신문
+    # - 한겨레
+    # - 한국일보
+    # - 매일경제
+    - 한국경제
+  # begin_date: 1992-07-01
+  # end_date: 1992-07-02
+  month: 2022-08
+  # month:
+  interval: 6
+  headless: true
+  timeout: 5
+  proxy:
+    - http://89.187.179.163:8443
+    - http://143.244.60.116:8443
+    - http://89.187.179.179:8443
+    - http://143.244.60.111:8443
+    - http://106.38.207.53:9999
+
+    # - http://89.187.173.164:8443
+  async_max_rate: 4
+  async_time_period: 3

@@ -5,7 +5,7 @@ hydra:
 
 defaults:
     - model: chatgpt
-    - process: scraping
+    - process: download_korean
     - _self_
 
 

@@ -1,3 +1,5 @@
+import calendar
+from datetime import datetime
 from dotenv import load_dotenv
 from loguru import logger
 import hydra
@@ -5,7 +7,8 @@ from os import getenv
 from pathlib import Path
 from omegaconf import DictConfig, OmegaConf, ListConfig
 
-from korean_data import Scrapper
+from HttpxScraper import HttpxScraper
+from PlayWrightScraper import PlayWrightScraper
 
 
 def env_setup() -> tuple[str, str]:
@@ -34,47 +37,77 @@ def main(cfg: DictConfig) -> None:
     output_dir = Path(cfg.data.raw) / 'bigkinds'
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    scrapper = Scrapper(
-        cfg.process.headless,
-        cfg.process.timeout,
-        output_dir,
-        cfg.process.begin_date,
-        cfg.process.end_date,
-        cfg.process.interval
-    )
-
     cfg_detail = OmegaConf.to_object(cfg)
-    print(OmegaConf.to_yaml(cfg_detail['process']))
-
-    scrapper.create_page()
+    mode = cfg_detail['process']['mode']
 
     match cfg.process.mode:
-        case 'csv':
+        case 'playwright':
+            print()
+            print(OmegaConf.to_yaml(cfg_detail['process'][mode]))
+
             email, password = env_setup()
-            scrapper.login(email, password)
+            scraper = PlayWrightScraper(
+                cfg.process.playwright.begin_date,
+                cfg.process.playwright.end_date,
+                cfg.process.playwright.interval,
+                cfg.process.playwright.headless,
+                cfg.process.playwright.timeout,
+                output_dir,
+            )
+            scraper.create_page()
+            scraper.login(email, password)
+
             match cfg.process.press:
                 case ListConfig():
                     prev_press = None
                     for press in cfg.process.press:
-                        scrapper.download_by_press(press, prev_press)
-                        scrapper.merge(press)
+                        scraper.download_by_press(press, prev_press)
+                        scraper.merge(press)
                         prev_press = press
                 case str():
                     batch_press = cfg.process.press.split('_')
-                    scrapper.download_by_multi_press(batch_press)
-                    scrapper.merge('_'.join(batch_press))
-        case 'json':
-            match cfg.process.press:
+                    scraper.download_by_multi_press(batch_press)
+                    scraper.merge('_'.join(batch_press))
+        case 'httpx':
+            print()
+            print(OmegaConf.to_yaml(cfg_detail['process'][mode]))
+
+            if cfg.process.httpx.month is not None:
+                begin = cfg.process.httpx.month + '-01'
+                begin_date = datetime.strptime(begin, '%Y-%m-%d')
+                days = calendar.monthrange(
+                    begin_date.year,
+                    begin_date.month
+                )[1]
+                end = cfg.process.httpx.month + f'-{days}'
+            else:
+                begin = cfg.process.httpx.begin_date
+                end = cfg.process.httpx.end_date
+
+            scraper = HttpxScraper(
+                begin,
+                end,
+                cfg.process.httpx.interval,
+                cfg.process.httpx.timeout,
+                cfg.process.httpx.proxy,
+                cfg.process.httpx.async_max_rate,
+                cfg.process.httpx.async_time_period,
+                output_dir,
+            )
+            match cfg.process.httpx.press:
                 case ListConfig():
-                    for press in cfg.process.press:
-                        data_id = scrapper.collect_data_id(press)
-                        scrapper.get_news_request_batch(data_id, press)
+                    for press in cfg.process.httpx.press:
+                        data_id_list_cluster = scraper.collect_data_id(press)
+                        scraper.collect_news(press, data_id_list_cluster)
 
                 case str():
-                    data_id = scrapper.collect_data_id(
-                        cfg.process.press.split('_')
+                    data_id_list_cluster = scraper.collect_data_id(
+                        cfg.process.httpx.press.split('_')
                     )
-                    scrapper.get_news_request_batch(data_id, cfg.process.press)
+                    scraper.collect_news(
+                        cfg.process.httpx.press,
+                        data_id_list_cluster
+                    )
 
 
 if __name__ == "__main__":

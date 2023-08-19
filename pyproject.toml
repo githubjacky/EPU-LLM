@@ -14,11 +14,13 @@ python-dotenv = "^1.0.0"
 openpyxl = "^3.1.2"
 loguru = "^0.7.0"
 langchain = {extras = ["llms"], version = "^0.0.249"}
-polars = "^0.18.12"
-xlsx2csv = "^0.8.1"
 pandas = "^2.0.3"
 orjson = "^3.9.4"
-httpx = "^0.24.1"
+httpx = {extras = ["socks"], version = "^0.24.1"}
+asyncio = "^3.4.3"
+nest-asyncio = "^1.5.7"
+aiolimiter = "^1.1.0"
+tqdm = "^4.66.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^6.2.5"

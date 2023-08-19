@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 def env_setup() -> str:
-    load_dotenv()
+    load_dotenv('env/.env')
     key = getenv("OPENAI_API_KEY")
     if key is None:
         key = input("input your OpenAI API key: ")
