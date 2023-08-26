@@ -634,7 +634,7 @@ class HttpxScraper(Scraper):
             for i in range(self.num_period)
         ]
 
-        logger.info("collect data id through httpx")
+        logger.info("collect news through httpx")
 
         with Pool(
             processes=self.num_mp_process,
