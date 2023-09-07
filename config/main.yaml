@@ -8,8 +8,14 @@ defaults:
     - process: download_korean
     - _self_
 
+prompt:
+  system_message_template_path: prompt_template/system.json
+  human_message_template_path: prompt_template/human.json
+  example_path: data/raw/reason_example.jsonl
+  reason_example_path: data/processed
+
 
 data:
-    raw: data/raw/
-    processed: data/processed/
-    predict: data/predict/
+  raw: data/raw/
+  processed: data/processed/
+  predict: data/predict/

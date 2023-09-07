@@ -23,7 +23,7 @@ httpx:
     - 한국경제
   # begin_date: 1992-07-01
   # end_date: 1992-07-02
-  month: 2022-01
+  month: 2021-12
   # month:
   interval: 6
   headless: true

@@ -1,0 +1,11 @@
+{
+    "input_variables": [
+        "country"
+    ],
+    "output_parser": null,
+    "partial_variables": {},
+    "template": "    I am an economist working on constructing {country}'s Economic Policy Uncertainty Index (EPU index).\nMy primary goal is to classify wheter a news should be excluded when constructing EPU index in {country}.\nThere are two criteria I'm considering to exclude a news.\n\nCriterion1:\nThe main idea of the news is either historical accounts or abstract subjective inferences, which won't impact {country}'s economics for sure.\nHence, this kind of news should be excluded.\nNotice that you should access wheter the news is related to {country}'s enconomics by yourself, insead of relying on the conclusion of the news.\n\nCriterion2:\nThere main idea of the news is not related with {country}.\nFor example, the people or companies mentioned in the news have nothing to do with {country} or the events\nin the news don't actually happen within {country}. I will excluded the news as well.\n\nHelp me complete the classification task identifying what type of news should be excluded.\nNotice that you can first justify wheter there is a person, company or event in news related to {country}. \nIf there isn't any, it should be excluded with high probability.\n",
+    "template_format": "f-string",
+    "validate_template": true,
+    "_type": "prompt"
+}
