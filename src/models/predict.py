@@ -1,12 +1,12 @@
+from dotenv import load_dotenv
+import hydra
+from loguru import logger
 import logging
+from omegaconf import DictConfig, OmegaConf
 from os import getenv
 from pathlib import Path
 
-import hydra
 from chatgpt import ChatGPT
-from dotenv import load_dotenv
-from loguru import logger
-from omegaconf import DictConfig, OmegaConf
 from prompt import Prompt
 
 
@@ -33,26 +33,34 @@ def main(cfg: DictConfig):
 
     logging.getLogger("openai").setLevel(logging.WARNING)
 
-    match cfg.model.strategy:
-        case "few_shot":
-            prompt = Prompt(
-                cfg.model.country,
-                cfg.prompt.system_message_template_path,
-                cfg.prompt.human_message_template_path,
-                cfg.prompt.example_path,
-                cfg.prompt.reason_example_path,
-            )
-        case _:
-            prompt = Prompt(
-                cfg.model.country,
-                cfg.prompt.system_message_template_path,
-                cfg.prompt.human_message_template_path,
-            )
+    if cfg.model.strategy == "few_shot_with_reason":
+        prompt = Prompt(
+            cfg.model.country,
+            cfg.prompt.system_message_template_path,
+            cfg.prompt.human_message_template_path,
+            cfg.model.few_shot_num_example,
+            cfg.prompt.example_path,
+            cfg.prompt.reason_example_dir,
+        )
+    elif cfg.model.strategy == "few_shot":
+        prompt = Prompt(
+            cfg.model.country,
+            cfg.prompt.system_message_template_path,
+            cfg.prompt.human_message_template_path,
+            cfg.model.few_shot_num_example,
+            cfg.prompt.example_path,
+        )
+    else:
+        prompt = Prompt(
+            cfg.model.country,
+            cfg.prompt.system_message_template_path,
+            cfg.prompt.human_message_template_path,
+        )
 
     input_dir = Path(cfg.data.raw)
 
     # input = 'EPU_Noise_Test.json'
-    input = "example00.jsonl"
+    input = cfg.model.input_file
     input_path = input_dir / input
     # data = json.loads(input_path.read_text())[0]
 
@@ -76,9 +84,9 @@ def main(cfg: DictConfig):
     clf.predict()
 
     logger.info("start writing json output")
-    output_dir = Path(f"{cfg.data.predict}/{cfg.model.model}/{cfg.model.strategy}")
+    output_dir = Path(cfg.data.predict) / input
     output_dir.mkdir(parents=True, exist_ok=True)
-    clf.output(output_dir / input)
+    clf.output(output_dir)
 
     logger.info("finish the process")
 

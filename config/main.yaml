@@ -12,7 +12,7 @@ prompt:
   system_message_template_path: prompt_template/system.json
   human_message_template_path: prompt_template/human.json
   example_path: data/raw/reason_example.jsonl
-  reason_example_path: data/processed
+  reason_example_dir: data/processed
 
 
 data:

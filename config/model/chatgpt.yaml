@@ -3,4 +3,5 @@ country: Taiwan
 model: gpt-3.5-turbo
 temperature: 0.
 strategy: few_shot_with_reason
-few_shot_num_example: 3
+few_shot_num_example: 8
+input_file: example01.jsonl
