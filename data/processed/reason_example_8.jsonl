@@ -1,8 +1,0 @@
-{"pred":1,"reason":"The news is about the Australian central bank raising interest rates, which is not directly related to Taiwan's economics."}
-{"pred":0,"reason":"The news provides information about a Taiwanese stainless steel cold rolling factory, which is relevant to Taiwan's economy."}
-{"pred":1,"reason":"The news is about the CEO of Mazda Taiwan expressing optimism about the domestic car market in Taiwan, which is subjective and does not provide concrete economic information for constructing EPU index."}
-{"pred":0,"reason":"The news provides information about the decline in performance of a major KTV company in Taiwan, which is relevant to Taiwan's economy and reflects the current state of the domestic consumption market."}
-{"pred":1,"reason":"The news is about the return of the former Prime Minister of Thailand, which is not directly related to Taiwan's economics."}
-{"pred":0,"reason":"The news provides information about the challenges and considerations of implementing a conscription system in Taiwan's defense department, which is relevant to Taiwan's economics and national security."}
-{"pred":1,"reason":"The news is about the G20 leaders implementing new regulations for banks and banking professionals, which is not directly related to Taiwan's economics."}
-{"pred":1,"reason":"The news provides a general overview of the global economic growth forecast and the potential risks posed by the sovereign debt crisis in Europe and the US. It does not provide specific information related to Taiwan's economics and should be excluded when constructing the EPU index."}
