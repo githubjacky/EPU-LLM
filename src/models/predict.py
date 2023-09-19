@@ -11,16 +11,18 @@ from prompt import Prompt
 
 
 def env_setup() -> str:
-    load_dotenv("env/.env")
+    load_dotenv()
     key = getenv("OPENAI_API_KEY")
+
     if key is None:
         key = input("input your OpenAI API key: ")
-        file = Path("env/.env")
+
+        file = Path(".env")
         if file.is_file():
-            with open(file, "a") as f:
+            with file.open("a") as f:
                 f.write(f"\nOPENAI_API_KEY={key}")
         else:
-            with open(file, "w") as f:
+            with file.open("w") as f:
                 f.write(f"OPENAI_API_KEY={key}")
 
     return key
@@ -32,46 +34,27 @@ def main(cfg: DictConfig):
     env_setup()
 
     logging.getLogger("openai").setLevel(logging.WARNING)
+    prompt = Prompt(
+        cfg.model.country,
+        cfg.prompt.system_message_template_path,
+        cfg.prompt.human_message_template_path,
+    )
 
-    if cfg.model.strategy == "few_shot_with_reason":
-        prompt = Prompt(
-            cfg.model.country,
-            cfg.prompt.system_message_template_path,
-            cfg.prompt.human_message_template_path,
-            cfg.model.few_shot_num_example,
-            cfg.prompt.example_path,
-            cfg.prompt.reason_example_dir,
-        )
-    elif cfg.model.strategy == "few_shot":
-        prompt = Prompt(
-            cfg.model.country,
-            cfg.prompt.system_message_template_path,
-            cfg.prompt.human_message_template_path,
-            cfg.model.few_shot_num_example,
-            cfg.prompt.example_path,
-        )
-    else:
-        prompt = Prompt(
-            cfg.model.country,
-            cfg.prompt.system_message_template_path,
-            cfg.prompt.human_message_template_path,
-        )
-
-    input_dir = Path(cfg.data.raw)
-
-    # input = 'EPU_Noise_Test.json'
-    input = cfg.model.input_file
-    input_path = input_dir / input
-    # data = json.loads(input_path.read_text())[0]
-
+    # data = json.loads(cfg.model.test_path.read_text())[0]
+    test_data = cfg.model.test_data
+    test_path = Path(cfg.data.raw) / test_data
     if cfg.model.name == "ChatGPT":
         clf = ChatGPT(
             prompt,
             cfg.model.strategy,
             cfg.model.model,
             cfg.model.temperature,
+            cfg.model.timeout,
             # data
-            input_path,
+            test_path,
+            cfg.model.few_shot_n_example,
+            cfg.model.example_path,
+            cfg.model.reason_output_dir,
         )
     else:
         pass
@@ -84,7 +67,7 @@ def main(cfg: DictConfig):
     clf.predict()
 
     logger.info("start writing json output")
-    output_dir = Path(cfg.data.predict) / input
+    output_dir = Path(cfg.data.predict) / test_data
     output_dir.mkdir(parents=True, exist_ok=True)
     clf.output(output_dir)
 

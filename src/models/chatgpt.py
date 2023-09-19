@@ -5,6 +5,7 @@ from loguru import logger
 import mlflow
 import matplotlib.pyplot as plt
 import orjson
+import openai
 from prompt import Prompt
 from pathlib import Path
 from sklearn.metrics import (
@@ -12,7 +13,7 @@ from sklearn.metrics import (
     confusion_matrix,
     ConfusionMatrixDisplay,
 )
-from typing import Dict, List
+from typing import List
 from tqdm import trange
 
 
@@ -23,10 +24,14 @@ class ChatGPT:
         strategy: str,
         model: str,
         temperature: float,
+        timeout: float,
         data: Path,
+        n_example: int = 6,
+        example_path: str = "data/raw/reason_example.jsonl",
+        reason_output_dir: str = "data/processed",
     ) -> None:
-        load_dotenv("env/.env")
-        llm = ChatOpenAI(model=model, temperature=temperature)
+        load_dotenv()
+        llm = ChatOpenAI(model=model, temperature=temperature, request_timeout=timeout)
 
         match strategy:
             case "zero_shot":
@@ -41,17 +46,22 @@ class ChatGPT:
                 )
             case "few_shot":
                 self.chat = LLMChain(
-                    llm=llm, prompt=prompt.few_shot, output_parser=prompt.parser
+                    llm=llm,
+                    prompt=prompt.few_shot(n_example, example_path),
+                    output_parser=prompt.parser,
                 )
             case "few_shot_with_reason":
                 self.chat = LLMChain(
                     llm=llm,
-                    prompt=prompt.few_shot_with_reason,
+                    prompt=prompt.few_shot_with_reason(
+                        n_example, example_path, reason_output_dir
+                    ),
                     output_parser=prompt.parser_with_reason,
                 )
         self.strategy = strategy
         self.input_name = str(data).split("/")[2]
         self.model_name = model
+        self.prompt = prompt
 
         self.n_example = (
             prompt.num
@@ -151,3 +161,76 @@ class ChatGPT:
         with open(output_path, "w") as f:
             for i in self.predictions:
                 f.write(i.json() + "\n")
+
+    def __format_examples_no_reason(self, tag: str, input_path: Path, n: int):
+        output_dir = Path("data/processed/fine_tune/")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / f"{n}_no_reason_{tag}.jsonl"
+
+        if not output_path.exists():
+            if tag == "train":
+                raw_examples = [
+                    orjson.loads(i)
+                    for i in Path(input_path).read_text().split("\n")
+                    if i != ""
+                ][:n]
+            else:
+                raw_examples = [
+                    orjson.loads(i)
+                    for i in Path(input_path).read_text().split("\n")
+                    if i != ""
+                ]
+
+            formatted = []
+            for i in range(len(raw_examples)):
+                human_message = self.prompt.human_message.format(
+                    correct_instructions="",
+                    output_instructions=self.prompt.output_instructions,
+                    news=raw_examples[i]["news"],
+                )
+                formatted.append(
+                    {
+                        "messages": [
+                            {"role": "system", "content": self.prompt.system_message},
+                            {"role": "user", "content": human_message},
+                            {
+                                "role": "assistant",
+                                "content": f'{{"pred": {raw_examples[i]["label"]}}}',
+                            },
+                        ]
+                    }
+                )
+
+            with output_path.open("wb") as f:
+                for i in formatted:
+                    f.write(orjson.dumps(i, option=orjson.OPT_APPEND_NEWLINE))
+
+    def finetune_train_test_split_no_reason(
+        self,
+        n: int = 50,
+        training_path: str = "data/raw/example01.jsonl",
+        testing_path: str = "data/raw/example02.jsonl",
+    ):
+        self.__format_examples_no_reason("train", Path(training_path), n)
+        self.__format_examples_no_reason("val", Path(testing_path), n)
+        self.formatted_training_path = (
+            f"data/processed/fine_tune/{n}_no_reason_train.jsonl"
+        )
+        self.formatted_val_path = f"data/processed/fine_tune/{n}_no_reason_val.jsonl"
+
+    def fine_tune(self, suffix: str):
+        train = openai.File.create(
+            file=open(self.formatted_training_path, "rb"), purpose="fine-tune"
+        )
+
+        val = openai.File.create(
+            file=open(self.formatted_val_path, "rb"), purpose="fine-tune"
+        )
+        res = openai.FineTuningJob.create(
+            training_file=train["id"],
+            validation_file=val["id"],
+            suffix=suffix,
+            model="gpt-3.5-turbo",
+        )
+
+        return res

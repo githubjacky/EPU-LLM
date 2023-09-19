@@ -2,6 +2,14 @@ name: ChatGPT
 country: Taiwan
 model: gpt-3.5-turbo
 temperature: 0.
-strategy: few_shot_with_reason
-few_shot_num_example: 8
-input_file: example01.jsonl
+timeout: 300
+strategy: few_shot_with_reason  # zero_shot, zero_shot_with_reason, few_shot, few_shot_with_reason
+few_shot_n_example: 8  # 3, 6, 8
+example_path: data/raw/reason_example.jsonl
+reason_output_dir: data/processed
+test_data: example02.jsonl
+
+finetune:
+  n: 50
+  train_path: data/raw/example01.jsonl
+  val_path: data/raw/example02.jsonl

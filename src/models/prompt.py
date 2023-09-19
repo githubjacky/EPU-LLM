@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import Optional
-
+from typing import List
 import orjson
 from dotenv import load_dotenv
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import FewShotChatMessagePromptTemplate, PromptTemplate
+from langchain.prompts import FewShotChatMessagePromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.loading import load_prompt
 from loguru import logger
@@ -59,9 +58,6 @@ class Prompt:
         country: str = "Taiwan",
         system_message_template_path: str = "prompt_template/system.json",
         human_message_template_path: str = "prompt_template/human.json",
-        example_num: int = 3,
-        example_path: Optional[str] = "data/raw/reason_example.jsonl",
-        reason_example_dir: Optional[str] = "data/processed",
     ) -> None:
         system_prompt_template = load_prompt(system_message_template_path)
         human_prompt_template = load_prompt(human_message_template_path)
@@ -69,37 +65,24 @@ class Prompt:
         self.system_message = system_prompt_template.format(country=country)
         self.human_message = human_prompt_template.template
 
-        self.num = example_num
-
-        self.example_path = example_path
-        self.reason_example_path = (
-            Path(reason_example_dir) / f"reason_example_{example_num}.jsonl"
-        )
-
     @property
     def zero_shot(self):
-        chat_prompt_template = ChatPromptTemplate.from_messages(
+        return ChatPromptTemplate.from_messages(
             [("system", self.system_message), ("human", self.human_message)]
         ).partial(correct_instructions="", output_instructions=self.output_instructions)
 
-        return chat_prompt_template
-
     @property
     def zero_shot_with_reason(self):
-        chat_prompt_template = ChatPromptTemplate.from_messages(
+        return ChatPromptTemplate.from_messages(
             [("system", self.system_message), ("human", self.human_message)]
         ).partial(
             correct_instructions="",
             output_instructions=self.output_instructions_with_reason,
         )
 
-        return chat_prompt_template
-
-    def reasoning(self):
+    def reasoning(self, n: int, example_path: Path, output_path: Path):
         example_list = [
-            orjson.loads(i)
-            for i in Path(self.example_path).read_text().split("\n")[: self.num]
-            if i != ""
+            orjson.loads(i) for i in example_path.read_text().split("\n")[:n] if i != ""
         ]
         news_set = [i["news"] for i in example_list]
         labels = [i["label"] for i in example_list]
@@ -145,120 +128,86 @@ class Prompt:
                 }
             )
 
-        with open(self.reason_example_path, "wb") as f:
+        with output_path.open("wb") as f:
             for i in examples:
                 f.write(orjson.dumps(i, option=orjson.OPT_APPEND_NEWLINE))
 
         return news_set, examples
 
-    @property
-    def few_shot(self):
-        example_prompt_template = """Quesion: Should the following article be excluded when constructing EPU index?
+    def __create_fewshot_prompt(
+        self,
+        article_example: List[str],
+        response_example: List[str],
+        output_instructions: str,
+    ):
+        few_shot_example = [
+            {
+                "news": article_example[i],
+                "response": response_example[i],
+                "correct_instructions": "",
+                "output_instructions": "",
+            }
+            for i in range(len(article_example))
+        ]
 
-        {news}
+        example_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("human", self.human_message),
+                ("ai", "{response}"),
+            ]
+        )
+        few_shot_prompt = FewShotChatMessagePromptTemplate(
+            example_prompt=example_prompt,
+            examples=few_shot_example,
+        )
 
-        Response: {response}
-        """
+        return ChatPromptTemplate.from_messages(
+            [
+                ("system", self.system_message),
+                few_shot_prompt,
+                ("human", self.human_message),
+            ]
+        ).partial(
+            correct_instructions="",
+            output_instructions=output_instructions,
+        )
 
+    def few_shot(self, n: int, example_path: str):
+        self.num = n
         article_example = []
         response_example = []
-        for i in Path(self.example_path).read_text().split("\n")[: self.num]:
+        for i in Path(example_path).read_text().split("\n")[:n]:
             if i != "":
                 item = orjson.loads(i)
                 article_example.append(item["news"])
                 response_example.append(f'{{"pred": {item["label"]}}}')
 
-        few_shot_example = [
-            {
-                "news": article_example[i],
-                "response": response_example[i],
-                "correct_instructions": "",
-                "output_instructions": "",
-            }
-            for i in range(len(article_example))
-        ]
-        example_prompt = PromptTemplate.from_template(example_prompt_template)
-
-        example_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("human", self.human_message),
-                ("ai", "{response}"),
-            ]
-        )
-        few_shot_prompt = FewShotChatMessagePromptTemplate(
-            example_prompt=example_prompt,
-            examples=few_shot_example,
+        return self.__create_fewshot_prompt(
+            article_example, response_example, self.output_instructions
         )
 
-        final_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.system_message),
-                few_shot_prompt,
-                ("human", self.human_message),
-            ]
-        ).partial(
-            correct_instructions="",
-            output_instructions=self.output_instructions_with_reason,
-        )
+    def few_shot_with_reason(self, n: int, example_path: str, output_dir: str):
+        self.num = n
+        _example_path = Path(example_path)
+        _output_dir = Path(output_dir)
+        output_path = _output_dir / f"reason_example_{n}.jsonl"
 
-        return final_prompt
-
-    @property
-    def few_shot_with_reason(self):
-        example_prompt_template = """Quesion: Should the following article be excluded when constructing EPU index?
-
-        {news}
-
-        Response: {response}
-        """
-
-        if not Path(self.reason_example_path).exists():
+        if not output_path.exists():
             logger.warning("reasoning example doesn't exist, start reasoning")
-            article_example, response_example = self.reasoning()
+            article_example, response_example = self.reasoning(
+                n, _example_path, output_path
+            )
         else:
             article_example = [
                 orjson.loads(i)["news"]
-                for i in Path(self.example_path).read_text().split("\n")[: self.num]
+                for i in _example_path.read_text().split("\n")[:n]
                 if i != ""
             ]
 
             response_example = [
-                i
-                for i in Path(self.reason_example_path).read_text().split("\n")
-                if i != ""
+                i for i in output_path.read_text().split("\n") if i != ""
             ]
 
-        few_shot_example = [
-            {
-                "news": article_example[i],
-                "response": response_example[i],
-                "correct_instructions": "",
-                "output_instructions": "",
-            }
-            for i in range(len(article_example))
-        ]
-        example_prompt = PromptTemplate.from_template(example_prompt_template)
-
-        example_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("human", self.human_message),
-                ("ai", "{response}"),
-            ]
+        return self.__create_fewshot_prompt(
+            article_example, response_example, self.output_instructions_with_reason
         )
-        few_shot_prompt = FewShotChatMessagePromptTemplate(
-            example_prompt=example_prompt,
-            examples=few_shot_example,
-        )
-
-        final_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.system_message),
-                few_shot_prompt,
-                ("human", self.human_message),
-            ]
-        ).partial(
-            correct_instructions="",
-            output_instructions=self.output_instructions_with_reason,
-        )
-
-        return final_prompt
