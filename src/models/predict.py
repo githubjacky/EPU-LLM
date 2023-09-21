@@ -60,7 +60,7 @@ def main(cfg: DictConfig):
         pass
 
     cfg_detail = OmegaConf.to_object(cfg)
-    print("\nscrapping parameters:\n")
+    print("\nllm prediction parameters:\n")
     print(OmegaConf.to_yaml(cfg_detail["model"]))
 
     logger.info("start predicting")

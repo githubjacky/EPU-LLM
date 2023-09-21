@@ -14,7 +14,6 @@ prompt:
   example_path: data/raw/reason_example.jsonl
   reason_example_dir: data/processed
 
-
 data:
   raw: data/raw/
   processed: data/processed/

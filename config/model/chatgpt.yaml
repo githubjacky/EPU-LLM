@@ -4,12 +4,17 @@ model: gpt-3.5-turbo
 temperature: 0.
 timeout: 300
 strategy: few_shot_with_reason  # zero_shot, zero_shot_with_reason, few_shot, few_shot_with_reason
-few_shot_n_example: 8  # 3, 6, 8
+few_shot_n_example: 8  # 6 perform the best
 example_path: data/raw/reason_example.jsonl
 reason_output_dir: data/processed
 test_data: example02.jsonl
 
-finetune:
+fine_tune:
+  input_dir: data/raw
+  output_dir: data/processed/fine_tune
   n: 50
-  train_path: data/raw/example01.jsonl
-  val_path: data/raw/example02.jsonl
+  strategy: no_reason
+  n_epochs: 3
+  train_file: example01.jsonl
+  val_file: example02.jsonl
+  

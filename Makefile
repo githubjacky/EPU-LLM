@@ -9,12 +9,6 @@ env: dependencies
 	@echo "Activating virtual environment..."
 	poetry shell
 
-download:
-	poetry run python src/data/download.py
-
-predict:
-	poetry run python src/predict.py
-
 tests:
 	pytest
 

@@ -87,7 +87,7 @@ class Prompt:
         news_set = [i["news"] for i in example_list]
         labels = [i["label"] for i in example_list]
 
-        load_dotenv("env/.env")
+        load_dotenv()
         llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.0)
         memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
