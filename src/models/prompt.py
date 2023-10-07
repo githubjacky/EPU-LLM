@@ -1,45 +1,47 @@
-from pathlib import Path
-from typing import List
-import orjson
-from dotenv import load_dotenv
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
+from langchain.callbacks.manager import get_openai_callback
 from langchain.memory import ConversationBufferMemory
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import FewShotChatMessagePromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.loading import load_prompt
 from loguru import logger
+import logging
+import orjson
 from pydantic import BaseModel, Field
+from pathlib import Path
+from typing import List, Tuple
+from tqdm import tqdm
+import time
+
+
+from utils import read_jsonl, format_handler, refresh_handler
 
 
 class ClassificationResult(BaseModel):
     pred: int = Field(
-        description=" ".join(
-            (
-                "If the news should be excluded, return 1.",
-                "If the news should not be excluded, return 0.",
-            )
-        )
+        description=" ".join((
+            "If the news should be excluded, return 1.",
+            "If the news should not be excluded, return 0.",
+
+        ))
     )
 
 
 class ClassificationResultWithReason(BaseModel):
     pred: int = Field(
-        description=" ".join(
-            (
-                "If the news should be excluded, return 1.",
-                "If the news should not be excluded, return 0.",
-            )
-        )
+        description=" ".join((
+            "If the news should be excluded, return 1.",
+            "If the news should not be excluded, return 0.",
+        ))
     )
     reason: str = Field(
-        description=" ".join(
-            (
-                "Reason for why or why not it should be excluded for constructing EPU index.",
-                "Use no more thant 30 words.",
-            )
-        )
+        description=" ".join((
+            "Reason for why or why not it should be excluded",
+            "for constructing EPU index.",
+            "Use no more thant 30 words.",
+        ))
     )
 
 
@@ -53,126 +55,175 @@ class Prompt:
 
     output_instructions_with_reason = parser_with_reason.get_format_instructions()
 
-    def __init__(
-        self,
-        country: str = "Taiwan",
-        system_message_template_path: str = "prompt_template/system.json",
-        human_message_template_path: str = "prompt_template/human.json",
-    ) -> None:
+    question = "Should the news be excluded?"
+
+    def __init__(self,
+                 country: str = "Taiwan",
+                 system_message_template_path: str = "prompt_template/system.json",
+                 human_message_template_path: str = "prompt_template/human.json",
+                ) -> None:
+
         system_prompt_template = load_prompt(system_message_template_path)
         human_prompt_template = load_prompt(human_message_template_path)
 
-        self.system_message = system_prompt_template.format(country=country)
+        self.country = country
+        self.system_message = system_prompt_template.template
         self.human_message = human_prompt_template.template
 
     @property
-    def zero_shot(self):
-        return ChatPromptTemplate.from_messages(
-            [("system", self.system_message), ("human", self.human_message)]
-        ).partial(correct_instructions="", output_instructions=self.output_instructions)
+    def zero_shot(self) -> ChatPromptTemplate:
+        return (
+            ChatPromptTemplate
+            .from_messages([
+                ("system", self.system_message),
+                MessagesPlaceholder(variable_name = "chat_history"),
+                ("human", self.human_message)
+            ])
+            .partial(
+                country = self.country,
+                output_instructions = self.output_instructions,
+            )
+        )
 
     @property
-    def zero_shot_with_reason(self):
-        return ChatPromptTemplate.from_messages(
-            [("system", self.system_message), ("human", self.human_message)]
-        ).partial(
-            correct_instructions="",
-            output_instructions=self.output_instructions_with_reason,
-        )
-
-    def reasoning(self, n: int, example_path: Path, output_path: Path):
-        example_list = [
-            orjson.loads(i) for i in example_path.read_text().split("\n")[:n] if i != ""
-        ]
-        news_set = [i["news"] for i in example_list]
-        labels = [i["label"] for i in example_list]
-
-        load_dotenv()
-        llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.0)
-        memory = ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True
-        )
-
-        chat_prompt_template = ChatPromptTemplate.from_messages(
-            [
+    def zero_shot_with_reason(self) -> ChatPromptTemplate:
+        return (
+            ChatPromptTemplate
+            .from_messages([
                 ("system", self.system_message),
-                MessagesPlaceholder(variable_name="chat_history"),
+                MessagesPlaceholder(variable_name = "chat_history"),
+                ("human", self.human_message)]
+            )
+            .partial(
+                country = self.country,
+                output_instructions = self.output_instructions_with_reason,
+            )
+        )
+
+
+    def reasoning_instance(self, chain: LLMChain, label: int, warning: str, i: int):
+        chain.memory = ConversationBufferMemory(
+            memory_key = "chat_history",
+            return_messages = True
+        )
+
+        instruction = f"In this scenario, the label is known. {warning}"
+        res = format_handler(chain, i, instruction)
+        j = 0
+
+        while res.get('pred') != label:
+            time.sleep(2)
+
+            if res.get('pred') == -1 or j == 5:
+                logger.info(f"refresh the memory for the {i}th sample, inconsistent for: {j} times")
+                chain, res = refresh_handler(chain, instruction, i)
+                j = 1
+            else:
+                logger.info(f"incosistent reasoning for the {i}th sample, pred: {res['pred']}; label: {label}, re-generate")
+                j += 1
+                res = format_handler(chain, i, f'Incorrect classification. {warning}')
+
+        return res
+
+
+    def reasoning(self, n: int, example_path: Path, output_path: Path) -> Tuple[List[str], List[str]]:
+
+        log_file = Path(f"log/reasoning_{n}_{str(example_path).split('/')[-1]}.log")
+        if log_file.exists: log_file.unlink(missing_ok = True)
+        logger.remove()
+        logger.add(log_file, level = "INFO")
+        logging.getLogger("openai").setLevel(logging.WARNING)
+
+        example_list = read_jsonl(example_path, n)
+        news_set = [i.get("news") for i in example_list]
+        labels = [i.get("label") for i in example_list]
+
+        llm = ChatOpenAI(
+            model = "gpt-3.5-turbo",
+            temperature = 0.6,
+            request_timeout = 120
+        )
+        chat_prompt_template = (
+            ChatPromptTemplate
+            .from_messages([
+                ("system", self.system_message),
+                MessagesPlaceholder(variable_name = "chat_history"),
                 ("human", self.human_message),
-            ]
-        ).partial(output_instructions=self.output_instructions_with_reason)
+            ])
+            .partial(
+                country = self.country,
+                output_instructions = self.output_instructions_with_reason
+            )
+        )
 
         examples = []
-        for i, news in enumerate(news_set):
-            chain = LLMChain(
-                prompt=chat_prompt_template.partial(news=news),
-                llm=llm,
-                memory=memory,
-            )
-            label = labels[i]
-
-            instructions = (
-                "This news should be excluded. Organize the information and re-classify again."
-                if label == 1
-                else "This news should not be excluded. Organize the information and re-classify again."
-            )
-
-            res = orjson.loads(chain.run(correct_instructions=""))
-            while res["pred"] != label:
-                logger.warning("incosistent reasoning, re-generate")
-                res = orjson.loads(chain.run(correct_instructions=instructions))
-
-            examples.append(
-                {
-                    "pred": label,
-                    "reason": res["reason"],
-                }
-            )
-
+        warning = {
+            1: 'This news should be excluded when constructing EPU index, and thus the "pred" key should be 1. Organize the information and generate reronable interpretations',
+            0: 'This news should not be excluded when constructing EPU index, and thus the "pred" key should be 0. Organize the information and generate reronable interpretations',
+        }
         with output_path.open("wb") as f:
-            for i in examples:
-                f.write(orjson.dumps(i, option=orjson.OPT_APPEND_NEWLINE))
+            with get_openai_callback() as cb:
+                for i, news in enumerate(tqdm(news_set)):
+                    chain = LLMChain(
+                        llm = llm,
+                        prompt = chat_prompt_template.partial(news = news)
+                    )
+                    label = labels[i]
+                    res = self.reasoning_instance(
+                        chain,
+                        label,
+                        warning.get(label),
+                        i
+                    )
+
+                    examples.append(orjson.dumps(res))
+                    f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
+                    time.sleep(1)
+
+
+        logger.info(f"the cost for fine tuning: {cb.total_cost}")
 
         return news_set, examples
 
-    def __create_fewshot_prompt(
-        self,
-        article_example: List[str],
-        response_example: List[str],
-        output_instructions: str,
-    ):
+    def __create_fewshot_prompt(self,
+                                article_example: List[str],
+                                response_example: List[str],
+                                output_instructions: str,
+                               ) -> ChatPromptTemplate:
         few_shot_example = [
             {
                 "news": article_example[i],
                 "response": response_example[i],
-                "correct_instructions": "",
+                "correct_instructions": self.question,
                 "output_instructions": "",
             }
             for i in range(len(article_example))
         ]
 
-        example_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("human", self.human_message),
-                ("ai", "{response}"),
-            ]
-        )
+        example_prompt = ChatPromptTemplate.from_messages([
+            ("human", self.human_message),
+            ("ai", "{response}"),
+        ])
         few_shot_prompt = FewShotChatMessagePromptTemplate(
-            example_prompt=example_prompt,
-            examples=few_shot_example,
+            example_prompt = example_prompt,
+            examples = few_shot_example,
         )
 
-        return ChatPromptTemplate.from_messages(
-            [
+        return (
+            ChatPromptTemplate
+            .from_messages([
                 ("system", self.system_message),
                 few_shot_prompt,
+                MessagesPlaceholder(variable_name = "chat_history"),
                 ("human", self.human_message),
-            ]
-        ).partial(
-            correct_instructions="",
-            output_instructions=output_instructions,
+            ])
+            .partial(
+                country = self.country,
+                output_instructions = output_instructions,
+            )
         )
 
-    def few_shot(self, n: int, example_path: str):
+    def few_shot(self, n: int, example_path: str) -> ChatPromptTemplate:
         self.num = n
         article_example = []
         response_example = []
@@ -183,10 +234,12 @@ class Prompt:
                 response_example.append(f'{{"pred": {item["label"]}}}')
 
         return self.__create_fewshot_prompt(
-            article_example, response_example, self.output_instructions
+            article_example,
+            response_example,
+            self.output_instructions
         )
 
-    def few_shot_with_reason(self, n: int, example_path: str, output_dir: str):
+    def few_shot_with_reason(self, n: int, example_path: str, output_dir: str) -> ChatPromptTemplate:
         self.num = n
         _example_path = Path(example_path)
         _output_dir = Path(output_dir)
@@ -200,13 +253,9 @@ class Prompt:
         else:
             article_example = [
                 orjson.loads(i)["news"]
-                for i in _example_path.read_text().split("\n")[:n]
-                if i != ""
+                for i in read_jsonl(_example_path, n, return_str = True)
             ]
-
-            response_example = [
-                i for i in output_path.read_text().split("\n") if i != ""
-            ]
+            response_example = read_jsonl(output_path)
 
         return self.__create_fewshot_prompt(
             article_example, response_example, self.output_instructions_with_reason

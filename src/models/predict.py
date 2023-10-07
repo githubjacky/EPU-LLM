@@ -1,31 +1,12 @@
-from dotenv import load_dotenv
 import hydra
 from loguru import logger
 import logging
 from omegaconf import DictConfig, OmegaConf
-from os import getenv
 from pathlib import Path
-
-from chatgpt import ChatGPT
 from prompt import Prompt
 
-
-def env_setup() -> str:
-    load_dotenv()
-    key = getenv("OPENAI_API_KEY")
-
-    if key is None:
-        key = input("input your OpenAI API key: ")
-
-        file = Path(".env")
-        if file.is_file():
-            with file.open("a") as f:
-                f.write(f"\nOPENAI_API_KEY={key}")
-        else:
-            with file.open("w") as f:
-                f.write(f"OPENAI_API_KEY={key}")
-
-    return key
+from utils import env_setup
+from chatgpt import ChatGPT
 
 
 @hydra.main(config_path="../../config", config_name="main", version_base=None)
@@ -59,9 +40,9 @@ def main(cfg: DictConfig):
     else:
         pass
 
-    cfg_detail = OmegaConf.to_object(cfg)
-    print("\nllm prediction parameters:\n")
-    print(OmegaConf.to_yaml(cfg_detail["model"]))
+    # cfg_detail = OmegaConf.to_object(cfg)
+    # print("\nllm prediction parameters:\n")
+    # print(OmegaConf.to_yaml(cfg_detail["model"]))
 
     logger.info("start predicting")
     clf.predict()
