@@ -72,8 +72,14 @@ class ChatGPT:
         )
         self.data = read_jsonl(data) if isinstance(data, Path) else data
 
-        log_file = Path("log/chatgpt_predict.log")
-        log_file.unlink(missing_ok=True)
+        log_file = Path(
+            '/'.join((
+                'log',
+                'chatgpt_predict',
+                self.input_name,
+                time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+            ))
+        )
         self.log_file = log_file
 
 
@@ -90,28 +96,55 @@ class ChatGPT:
         return res
 
 
-    def predict(self) -> None:
+    def predict(self, output_dir: Path) -> None:
         logger.remove()
         logger.add(self.log_file, level="INFO")
+        logger.info(f'model: {self.llm.model_name}')
+        logger.info(f'prompting strategy: {self.strategy}_{self.n_example}')
 
         labels = [i["label"] for i in self.data]
         news = [i["news"] for i in self.data]
 
-        pred = []
-        reason = []
-        predictions = []
-        with get_openai_callback() as cb:
-            for i in trange(len(news), position = 0, leave = True):
-                chain = LLMChain(
-                    llm = self.llm,
-                    prompt = self.prompt_strategy.partial(news = news[i]),
-                )
-                res = self.predict_instance(chain, self.prompt.question, i)
-                predictions.append(res)
-                pred.append(res['pred'])
-                reason.append(res.get('reason'))
-                time.sleep(1)
+        output_path = output_dir / (
+            "_".join((self.strategy, str(self.n_example), self.model_name)) + ".jsonl"
+        )
 
+        with get_openai_callback() as cb:
+            if not output_path.exists():
+                reason = []
+                pred = []
+                with output_path.open('wb') as f:
+                    for i in trange(len(news), position = 0, leave = True):
+                        chain = LLMChain(
+                            llm = self.llm,
+                            prompt = self.prompt_strategy.partial(news = news[i]),
+                        )
+                        res = self.predict_instance(chain, self.prompt.question, i)
+                        pred.append(res['pred'])
+                        reason.append(res.get('reason'))
+                        f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
+                        time.sleep(1)
+            else:
+                with output_path.open('ab') as f:
+                    _res = read_jsonl(output_path)
+                    reason = [i.get('reason') for i in _res]
+                    pred = [i.get('pred') for i in _res]
+                    _i = len(_res)
+                    for i in trange(len(news) - _i, position = 0, leave = True):
+                        chain = LLMChain(
+                            llm = self.llm,
+                            prompt = self.prompt_strategy.partial(news = news[i + _i]),
+                        )
+                        res = self.predict_instance(chain, self.prompt.question, i + _i)
+                        pred.append(res['pred'])
+                        reason.append(res.get('reason'))
+                        f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
+                        time.sleep(1)
+
+            self.log_predict(cb, news, labels, pred, reason)
+
+
+    def log_predict(self, cb, news, labels, pred, reason):
         metric_dict = classification_report(labels, pred, output_dict = True)
         table_dict = (
             {
@@ -137,6 +170,7 @@ class ChatGPT:
             mlflow.log_param("model", self.model_name)
             mlflow.log_param("few_shot_n_example", self.n_example)
             mlflow.log_param("used_tokens", cb.total_tokens)
+            mlflow.log_param("prediction_strategy", self.strategy)
 
             if self.model_name[:2] == 'ft':
                 mlflow.log_param("epochs", self.model_name.split(':')[-2].split('-')[2])
@@ -144,6 +178,7 @@ class ChatGPT:
                 cost = 0.012*(cb.prompt_tokens/1000) + 0.016*(cb.completion_tokens/1000)
                 mlflow.log_param("cost", cost)
             else:
+                mlflow.log_param("fine_tune_n_example", 0)
                 mlflow.log_param("cost", cb.total_cost)
 
             mlflow.log_metric("precision_0", metric_dict["0"]["precision"])
@@ -158,14 +193,3 @@ class ChatGPT:
 
             mlflow.log_artifact("confustion_matrix.png")
             mlflow.log_table(table_dict, "news_pred_reason.json")
-
-        self.predictions = predictions
-
-
-    def output(self, output_dir: Path) -> None:
-        output_path = output_dir / (
-            "_".join((self.strategy, str(self.n_example), self.model_name)) + ".jsonl"
-        )
-        with open(output_path, 'wb') as f:
-            for i in self.predictions:
-                f.write(orjson.dumps(i, option = orjson.OPT_APPEND_NEWLINE))

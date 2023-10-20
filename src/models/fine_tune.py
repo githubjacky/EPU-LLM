@@ -1,12 +1,13 @@
 import hydra
 from loguru import logger
 import orjson
-import json
 from omegaconf import DictConfig
 import openai
+from os import getenv
 from pathlib import Path
 from prompt import Prompt
 import time
+from tqdm import tqdm
 from typing import List, Dict, Optional
 import tiktoken
 
@@ -18,7 +19,7 @@ class OpenAIFineTuner:
                  prompt: Prompt,
                  strategy: str,
                  input_dir: str = "data/raw",
-                 output_dir: str = "data/processed/fine_tune",
+                 output_dir: str = f'data/processed/fine_tune',
                  train_file: str = "example01.jsonl",
                  val_file: Optional[str] = None,
                 ):
@@ -29,13 +30,17 @@ class OpenAIFineTuner:
         self.output_reason_dir = Path(f'{output_dir}/reason_example')
 
 
-        record_path = Path(output_dir) / 'upload_file_info.jsonl'
+
+        record_dir = Path(output_dir) / getenv('OPENAI_API_KEY')
+        record_dir.mkdir(exist_ok = True, parents = True)
+        self.record_file_path = record_dir / 'upload_file_info.jsonl'
+        self.record_model_path = record_dir / 'fine_models.jsonl'
         file_name = []
         file_id = []
-        for j in [orjson.loads(i) for i in record_path.read_text().split("\n")[:-1]]:
-            file_name.append(j.get("name"))
-            file_id.append(j.get("id"))
-        self.record_path = record_path
+        for j in read_jsonl(self.record_file_path):
+            if j.get('strategy') == strategy:
+                file_name.append(j.get("name"))
+                file_id.append(j.get("id"))
         self.file_name = file_name
         self.file_id = file_id
 
@@ -125,11 +130,12 @@ class OpenAIFineTuner:
             user_provided_filename = file,
         )
 
-        with self.record_path.open('ab') as f:
+        with self.record_file_path.open('ab') as f:
             f.write(orjson.dumps(
                 {
                     "name": file,
-                    "id": obj.get('id')
+                    "id": obj.get('id'),
+                    "strategy": self.strategy
                 },
                 option = orjson.OPT_APPEND_NEWLINE
             ))
@@ -268,12 +274,16 @@ class OpenAIFineTuner:
                 )
             )
             logger.info(f"the cost for fine tuning: {train_cost + val_cost}")
-            openai.FineTuningJob.create(
-                training_file = train_file_id,
-                validation_file = val_file_id,
-                suffix = suffix,
-                model = "gpt-3.5-turbo",
-                hyperparameters = {"n_epochs": n_epochs},
+            self.ft_job_id = (
+                openai.FineTuningJob
+                .create(
+                    training_file = train_file_id,
+                    validation_file = val_file_id,
+                    suffix = suffix,
+                    model = "gpt-3.5-turbo",
+                    hyperparameters = {"n_epochs": n_epochs},
+                )
+                .get('id')
             )
         else:
             train_cost = (
@@ -283,12 +293,59 @@ class OpenAIFineTuner:
                 )
             )
             logger.info(f"the cost for fine tuning: {train_cost}")
-            openai.FineTuningJob.create(
-                training_file = train_file_id,
-                suffix = suffix,
-                model = "gpt-3.5-turbo",
-                hyperparameters = {"n_epochs": n_epochs},
+            self.ft_job_id = (
+                openai.FineTuningJob
+                .create(
+                    training_file = train_file_id,
+                    suffix = suffix,
+                    model = "gpt-3.5-turbo",
+                    hyperparameters = {"n_epochs": n_epochs},
+                )
+                .get('id')
             )
+
+    def log_fine_tune(self) -> None:
+        status = ''
+        logger.info(f'wait for fine tuning job to initiate')
+        processed = [
+
+        ]
+        while status in processed:
+            time.sleep(120)
+            status = (
+                openai.FineTuningJob
+                .list_events(id = self.ft_job_id, limit = 1)
+                .get('data')[0]
+                .get('message')
+            )
+
+        event = (
+            openai.FineTuningJob
+            .list_events(id = self.ft_job_id, limit = 1)
+            .get('data')[0]
+        )
+        step, total_step = event['step'].split('/')
+        with tqdm(total = total_step) as pbar:
+            while step != total_step:
+                pbar.update(step)
+                time.sleep(10)
+                step = (
+                    openai.FineTuningJob
+                    .list_events(id = self.ft_job_id, limit = 1)
+                )
+            pbar.update(total_step)
+
+        with self.record_model_path.open('ab') as f:
+            f.write(orjson.dumps(
+                {
+                    'model':openai.FineTuningJob.retrieve(self.ft_job_id)['fine_tuned_model'],
+                    'train': self.train_file,
+                    'val': self.val_file if self.val_file is not None else ''
+                }, 
+                option = orjson.OPT_APPEND_NEWLINE
+            ))
+
+# {"model": "ft:gpt-3.5-turbo-0613:personal:1000-nor-3:86th27U3","train": "example07.jsonl","val":""}
 
 
 
@@ -313,6 +370,7 @@ def main(cfg: DictConfig):
         finetuner.format(cfg.model.fine_tune.n)
         time.sleep(5)
         finetuner.fine_tune(cfg.model.fine_tune.n_epochs)
+        # finetuner.log_fine_tune()
 
 
 if __name__ == "__main__":

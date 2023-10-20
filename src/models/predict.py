@@ -44,13 +44,11 @@ def main(cfg: DictConfig):
     # print("\nllm prediction parameters:\n")
     # print(OmegaConf.to_yaml(cfg_detail["model"]))
 
-    logger.info("start predicting")
-    clf.predict()
 
-    logger.info("start writing json output")
     output_dir = Path(cfg.data.predict) / test_data
     output_dir.mkdir(parents=True, exist_ok=True)
-    clf.output(output_dir)
+    logger.info("start predicting")
+    clf.predict(output_dir)
 
     logger.info("finish the process")
 

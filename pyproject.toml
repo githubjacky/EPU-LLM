@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "epu_denoise"
 version = "0.1.0"
-description = ""
+description = "utilize the LLM to denoise the EPU index(Economic Policy Uncertainty Index)"
 authors = ["githubjacky"]
 
 [tool.poetry.dependencies]

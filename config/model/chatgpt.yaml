@@ -1,11 +1,12 @@
 name: ChatGPT
 country: Taiwan
-# model: gpt-3.5-turbo
-model: ft:gpt-3.5-turbo-0613:denoiseepu:1000-withr-3:8606MO9e
+model: gpt-3.5-turbo
+# model: ft:gpt-3.5-turbo-0613:denoiseepu:1000-withr-3:8606MO9e
+# model: ft:gpt-3.5-turbo-0613:personal:100-withr-3:85EQuAFS
 temperature: 0.
 timeout: 120
 # zero_shot, zero_shot_with_reason, few_shot, few_shot_with_reason
-strategy: zero_shot_with_reason
+strategy: few_shot_with_reason
 few_shot_n_example: 6  # 6 perform the best
 example_path: data/raw/reason_example.jsonl
 reason_output_dir: data/processed
@@ -14,9 +15,10 @@ test_data: example03.jsonl
 fine_tune:
   input_dir: data/raw
   output_dir: data/processed/fine_tune
-  n: 1000
+  n: 10
   strategy: no_reason
-  n_epochs: 3
-  train_file: example07.jsonl
+  # strategy: with_reason
+  n_epochs: 30
+  train_file: example00.jsonl
   val_file:
   # val_file: example02.jsonl
