@@ -29,7 +29,9 @@ def env_setup() -> str:
 
 
 def read_jsonl(
-    path: str | Path, n: int = -1, return_str: bool = False
+    path: str | Path, 
+    n: int = -1, 
+    return_str: bool = False
 ) -> List[Dict] | List[str]:
     return (
         [orjson.loads(i) for i in Path(path).read_text().split("\n")[:n]]
