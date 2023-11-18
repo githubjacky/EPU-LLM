@@ -118,7 +118,7 @@ class ChatGPT:
                         chain = LLMChain(
                             llm = self.llm,
                             prompt = self.prompt_strategy.partial(news = news[i]),
-                            verbose = True
+                            # verbose = True
                         )
                         res = self.predict_instance(chain, self.prompt.question, i)
                         pred.append(res['pred'])
