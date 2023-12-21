@@ -1,0 +1,250 @@
+%! TeX program = xelatex
+\documentclass[11pt,english]{report}
+
+\input{src/preamble}
+\input{src/macros}
+\input{src/letterfonts}
+
+\title{\Huge{Reconstruction of the Economic Policy Uncertainty Using Large Language Models}}
+\author{\huge{Jacky Yeh}}
+\date{{\normalsize{}This version: November 2023\endgraf \vspace{0.5mm}
+}}
+\begin{document}
+\maketitle
+\newpage% or \cleardoublepage
+% \pdfbookmark[<level>]{<title>}{<dest>}
+% \pdfbookmark[section]{\contentsname}{toc}
+% \tableofcontents
+% \pagebreak
+
+
+\subsection{Result}
+What utilize OpenAI's ChatGPT-3.5-turbo API to test the predictability and
+feasibility of the NLP foundation model in constructing textual indices, with
+our main focus on the EPU index. In our experiments, we employed, but were not
+limited to, three approaches: zero-shot prompting, few-shot prompting (3, 6, 8 shots),
+and fine-tuning. Essentially, one-shot prompting involves purely asking
+questions to ChatGPT without providing any examples. On the other hand, few-shot
+prompting does involve providing some examples, which can often result in more
+accurate and thorough answers from ChatGPT. Below are the news articles that
+were used in few-shot prompting.
+
+\begin{table}[H]
+\renewcommand\arraystretch{1.5}
+\caption{news for few-shot prompt} 
+\label{tab: PayDexMin DID}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{8pt}
+{\fontsize{8}{8} \selectfont 
+    \input{Results/Tables/few_shot_news} 
+}
+\end{center}
+\end{adjustwidth}
+\footnotesize{
+\begin{justify}
+Notes: ADD NOTES HERE
+\end{justify}
+}
+\end{table}
+\newpage
+\subsubsection{prompt}
+\noindent \textbf{System:} \\
+I am an economist working on constructing Taiwan's Economic Policy Uncertainty
+Index (EPU index). My primary goal is to classify wheter a news should be
+excluded when constructing EPU index in Taiwan. There are two criteria I'm
+considering to exclude a news. \\
+\noindent Criterion1: \\
+The main idea of the news is either historical accounts or abstract subjective
+inferences, which won't impact Taiwan's economics for sure. Hence, this kind
+of news should be excluded. \\
+\noindent Criterion2: \\
+There main idea of the news is not related with Taiwan.
+For example, the people or companies mentioned in the news have nothing to do
+with Taiwan or the events in the news don't actually happen within Taiwan.
+I will excluded the news as well. \\
+
+\noindent Notice that you can first justify wheter there is a person, company
+or event in news related to Taiwan. If there isn't any, it should be excluded
+with high probability. \\
+
+\noindent \textbf{\{few shot examples\}} \\
+
+\noindent \textbf{Human:} \\
+Help me complete the classification task identifying whether the given news
+should be excluded. \\
+\noindent \textbf{News:} \textbf{\{one new from test set\}} \\
+
+\noindent \textbf{Output Instructions:} \\
+The output should be formatted as a JSON instance that conforms to the JSON
+schema below.
+
+\noindent As an example, for the schema {"properties": {"foo": {"title": "Foo", "description": "a list of strings", "type": "array", "items": {"type": "string"}}}, "required": ["foo"]}
+the object {"foo": ["bar", "baz"]} is a well-formatted instance of the schema. The object {"properties": {"foo": ["bar", "baz"]}} is not well-formatted.
+
+\noindent Here is the output schema:
+\textbf{\{json schema\}} \\
+Besides, don't forget to escape a single quote in the reason section and be
+aware of your reasoning's token length.
+\newpage
+
+Furthermore, we explored additional prompting strategies, including the Chain
+of Thought (CoT) method proposed by the Google Research Brain Team. CoT has
+demonstrated a broad impact, and in prior studies, its effectiveness has been
+shown in tasks related to mathematical derivation and commonsense reasoning.
+In Table 3, we illustrate our endeavor to incorporate step-by-step reasoning
+into our approach.
+\vspace{.3cm}
+\begin{table}[H]
+\renewcommand\arraystretch{1.5}
+\caption{CoT reasoning in few-show prompt} 
+\label{tab: PayDexMin DID}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{8pt}
+{\fontsize{8}{12} \selectfont 
+    \input{Results/Tables/cot_reasons} 
+}
+\end{center}
+\end{adjustwidth}
+\footnotesize{
+\begin{justify}
+Notes: ADD NOTES HERE
+\end{justify}
+}
+\end{table}
+\newpage
+The intuition behind CoT is analogous to solving a math problem. When faced
+with a mathematical challenge, our approach involves thinking step by step,
+linking these steps together to arrive at the final answer. Applying this idea
+of chaining, we break down our task into three components: Economy, Policy, and
+Uncertainty—the fundamental concepts of EPU.
+
+Despite the disappointing results, the concept used to identify whether a news
+item is related to EPU appears to be more complex and abstract. Consequently,
+it's highly challenging to provide the reasoning part in few-shot examples,
+prompting the need for ChatGPT to break down the important concepts and make
+more logical statements or reasoning. We hope future literature can further
+unveil the hidden potential of this prompting technique and develop a more
+concrete strategy for the EPU construction task.
+
+\textbf{\vspace{.3cm}
+\begin{table}[H]
+\renewcommand\arraystretch{1.5}
+\caption{ChatGPT answering} 
+\label{tab: PayDexMin DID}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{8pt}
+{\fontsize{8}{12} \selectfont 
+    \input{Results/Tables/gpt_answer} 
+}
+\end{center}
+\end{adjustwidth}
+\footnotesize{
+\begin{justify}
+Notes: ADD NOTES HERE
+\end{justify}
+}
+\end{table}}
+\newpage
+
+So far, we've illustrated various prompt engineering concepts, and one might
+understand the benefits of providing some examples. However, can we input as
+many examples as we want without any restrictions? The answer is quite
+straightforward—no. There is a limit to restrict the input context length for
+ChatGPT. In our experiment, to utilize the research fund in the most efficient
+way, we used the base 3.5 model with 4k tokens as long as we could. For longer
+news, we had to switch to the 16k model, which comes with a much higher cost.
+It's worth mentioning that the 3.5 model is not the most powerful model
+provided by OpenAI; there is a 4.0 version renowned for its better
+understanding not only of textual data but also images, known for its
+multimodal capability.
+
+When it comes to using a Large Language Model, there's always a two-choice
+problem: whether to go for fine-tuning or simply conduct prompt engineering.
+Although, thanks to the pre-trained capability, ChatGPT is already
+ready-to-use in many tasks, we also gave fine-tuning a shot.
+
+It's crucial to emphasize that there are many aspects of fine-tuning
+techniques. Traditionally in the NLP domain, it refers to training the model
+on top of pre-trained model parameters. There might be concerns that the
+parameters could get polluted when there is a lot of noise in the personalized
+data of the downstream task. In our case, we used the fine-tuning API provided
+by OpenAI, and most importantly, we don't know how it works. As our main goal
+is to explore the possibility of ChatGPT, this is the only way to perform
+fine-tuning.
+
+One benefit of fine-tuning is that as long as we have the fine-tuned model,
+there is no need to provide few-shot examples in each request. In other words,
+we can use zero-shot prompting to replace few-shot prompting with ease.
+Nonetheless, the cost is expensive because the workflow is intensive, and it's
+not as straightforward as asking a question and receiving a response. There is
+always a trade-off, and we are curious about which approach is more suitable
+for constructing the EPU index.
+
+The result of fine-tuning can't compete with the best-performing few-shot
+prompting, especially in the case where the provided training instances are
+only labels (without reason). We observed that the training process reaches a
+bottleneck when approaching 100 steps, and the loss also seems to have no room
+for improvement. Interestingly, when we add reasoning to our training
+instances, meaning we force ChatGPT to answer with a label plus a reason, the
+loss seems to improve, but the evaluation metrics don't show much difference.
+This is because we have limited knowledge of the process, and only a few
+parameters can be tuned, such as the epoch and learning rate. We decided to
+conclude our exploration at this point.
+
+In conclusion, the few-shot prompting with six examples performed the best.
+This outcome sheds light on how powerful the foundation model is, revealing
+that even when provided with only six examples, it can yield substantial
+improvements. Although in the current state ChatGPT3.5 can't outperform deep
+learning models when constructing the EPU index, it provides an alternative
+that strikes a balance between training time and result performance.
+
+\vspace{0.3cm}
+\begin{table}[H]
+\renewcommand\arraystretch{1.5}
+\caption{Evaluation Metrics for Test Set Contained in 7000 News Articles} 
+\label{tab: PayDexMin DID}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{8pt}
+{\fontsize{10}{12} \selectfont 
+    \input{Results/Tables/eval_metric} 
+}
+\end{center}
+\end{adjustwidth}
+\footnotesize{
+\begin{justify}
+Notes: ADD NOTES HERE
+\end{justify}
+}
+\end{table}
+
+\begin{figure}[H]
+\caption{confusion matrix of best performing model}
+\centering
+\includegraphics[width=13cm]{Results/Figures/confusion_matrix.png}
+\end{figure}
+
+\begin{figure}[H]
+\caption{loss of fine tuning without reason}
+\centering
+\includegraphics[width=17cm]{Results/Figures/no_reason_1000.png}
+\end{figure}
+
+\begin{figure}[H]
+\caption{loss of fine tuning with reason}
+\centering
+\includegraphics[width=17cm]{Results/Figures/with_reason_1000.png}
+\end{figure}
+
+\newpage
+
+
+
+\begin{appendices}
+\end{appendices}
+
+
+\end{document}

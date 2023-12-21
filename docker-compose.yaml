@@ -17,7 +17,7 @@ services:
       - $PWD/src/models/get_system_human_prompt_template.py:/home/$DOCKER_USER/epu_denoise/src/models/get_system_human_prompt_template.py
     command: python /home/$DOCKER_USER/epu_denoise/src/models/get_system_human_prompt_template.py
 
-  llm_predict:
+  llm-predict:
     image: 0jacky/epu_denoise:model
     build:
       dockerfile: ./dockerfile/model/Dockerfile
@@ -36,9 +36,10 @@ services:
       - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
       - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
       - $PWD/mlruns:/home/$DOCKER_USER/epu_denoise/mlruns
+      - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
     command: python /home/$DOCKER_USER/epu_denoise/src/models/predict.py
 
-  fine_tune:
+  fine-tune:
     image: 0jacky/epu_denoise:model
     container_name: fine_tune
     environment:
@@ -49,20 +50,22 @@ services:
         - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
         - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
         - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
+        - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
     command: python /home/$DOCKER_USER/epu_denoise/src/models/fine_tune.py
 
   # shell command: docker compose run --rm --service-ports mlflow_ui
-  mlflow_ui:
+  mlflow-ui:
     image: 0jacky/epu_denoise:model
     container_name: mlflow_ui
     ports:
       - "5050:5050"
     volumes:
       - $PWD/mlruns:/home/$DOCKER_USER/epu_denoise/mlruns
+      - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
     command: mlflow ui -h 0.0.0.0 -p 5050
 
   # shell command: docker compose run --rm --service-ports jupyter
-  jupyter:
+  jupyter-lab:
     image: 0jacky/epu_denoise:model
     container_name: jupyter_lab
     environment:
@@ -74,4 +77,5 @@ services:
       - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
       - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
       - $PWD/notebooks:/home/$DOCKER_USER/epu_denoise/notebooks
+      - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
     command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root

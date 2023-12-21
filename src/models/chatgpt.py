@@ -124,7 +124,7 @@ class ChatGPT:
                         pred.append(res['pred'])
                         reason.append(res.get('reason'))
                         f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
-                        time.sleep(1)
+                        # time.sleep(1)
             else:
                 with output_path.open('ab') as f:
                     _res = read_jsonl(output_path)
@@ -192,5 +192,5 @@ class ChatGPT:
             disp.plot()
             plt.savefig("confustion_matrix.png")
 
-            mlflow.log_artifact("confustion_matrix.png")
+            mlflow.log_artifact("confusion_matrix.png")
             mlflow.log_table(table_dict, "news_pred_reason.json")

@@ -1,0 +1,36 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{4}{c}}
+\hline\hline
+
+&\multicolumn{1}{c}{(1)}
+&\multicolumn{1}{c}{(2)}
+&\multicolumn{1}{c}{(3)}
+&\multicolumn{1}{c}{(4)}
+\\
+            
+&\multicolumn{1}{c}{micro\_f1}
+&\multicolumn{1}{c}{macro\_f1}
+&\multicolumn{1}{c}{weighted\_f1
+}&\multicolumn{1}{c}{precision\_0}
+\\
+\hline
+\text{8 shot with reason} & 0.707 & 0.705 & 0.799 & 0.707 \\
+
+\text{6 shot with reason} & 0.672 & 0.674 & 0.762 & 0.677 \\
+
+\text{3 shot with reason (fine-tuned 1000)} & 0.555 & 0.598 & 0.63 & 0.58 \\
+
+\text{6 shot no reason} & 0.54 & 0.585 & 0.621 & 0.566 \\  
+
+\text{zero shot with reason (fine-tuned 1000)} & 0.417 & 0.579 & 0.59 & 0.472 \\
+
+\text{zero shot no reason (fine-tuned 1000)} & 0.372 & 0.588 & 0.589 & 0.438 \\
+
+\text{zero shot with reason} & 0.401 & 0.58 & 0.588 & 0.459 \\
+
+\text{zero shot no reason} & 0.415 & 0.572 & 0.587 & 0.469 \\  
+
+\hline\hline
+\end{tabular}
+}

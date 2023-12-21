@@ -1,0 +1,30 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabularx}{\textwidth}{|C|C|C|}
+\hline
+
+\textbf{should be excluded (label 1)} & 
+\textbf{shouldn't be excluded (label 0)} & 
+\textbf{should be excluded (label 1)}\\
+\hline
+The news is about the Australian central bank raising interest rates. It mentions slightly Taiwan’s economics condtion, but there isn’t any further discussion about policy or uncertainty. Hence, this news should be excluded.
+&
+The news provides information about a Taiwanese stainless steel cold rolling factory, which is relevant to Taiwan’s economy.
+&
+The news is about the CEO of Mazda Taiwan expressing optimism about the domestic car market, which is not directly related to Taiwan’s economics.
+\\
+\hline
+
+\textbf{shouldn't be excluded (label 0)} & 
+\textbf{should be excluded (label 1)} &
+\textbf{shouldn't be excluded (label 0)}\\
+\hline
+The news provides information about the performance of a Taiwanese KTV company and its efforts to combat the economic downturn, which is relevant to Taiwan’s economy.
+&
+The news is about the return of the former Thai Prime Minister, which is not directly related to Taiwan’s economics.
+&
+The news provides information about the difficulties and challenges of implementing conscription in Taiwan’s defense system, which is relevant to Taiwan’s economy and national security.
+\\
+\hline
+\end{tabularx}
+}
