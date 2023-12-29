@@ -17,7 +17,7 @@ There are two ways for setting puthe virtual environment. One is
 # poetry venv
 make predict
 
-# docker 
+# docker
 make dpredict
 ```
 

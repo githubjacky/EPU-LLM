@@ -2,7 +2,7 @@ from langchain import PromptTemplate
 from loguru import logger
 
 
-def run() -> None:
+def main() -> None:
     system_template = """\
     I am an economist working on constructing {country}'s Economic Policy Uncertainty Index (EPU index).
 My primary goal is to classify wheter a news should be excluded when constructing EPU index in {country}.
@@ -42,4 +42,4 @@ Besides, don't forget to escape a single quote in the reason section.
 
 
 if __name__ == "__main__":
-    run()
+    main()

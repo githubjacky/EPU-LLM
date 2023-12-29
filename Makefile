@@ -1,4 +1,4 @@
-.PHONY: tests docs
+.PHONY: dependencies env predict finetune mlflow jupyter dpredict dfinetune dmlflow djupyter
 
 # installing dependencies
 dependencies:

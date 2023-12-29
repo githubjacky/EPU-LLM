@@ -34,8 +34,8 @@ def main(cfg: DictConfig):
             # data
             test_path,
             cfg.model.few_shot_n_example,
-            cfg.model.example_path,
-            cfg.model.reason_output_dir,
+            f'{cfg.prompt.fewshot_news_path}/{cfg.prompt.reasoning_strategy}.jsonl',
+            f'{cfg.prompt.fewshot_reasons_path}/{cfg.prompt.reasoning_strategy}',
         )
     else:
         pass

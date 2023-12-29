@@ -20,18 +20,17 @@ from utils import format_handler, refresh_handler, read_jsonl
 
 
 class ChatGPT:
-    def __init__(
-        self,
-        prompt: Prompt,
-        strategy: str,
-        model: str,
-        temperature: float,
-        timeout: float,
-        data: Path,
-        n_example: int = 6,
-        example_path: str = "data/raw/reason_example.jsonl",
-        reason_output_dir: str = "data/processed",
-    ) -> None:
+    def __init__(self,
+                 prompt: Prompt,
+                 strategy: str,
+                 model: str,
+                 temperature: float,
+                 timeout: float,
+                 data: Path,
+                 n_example: int = 6,
+                 example_path: str = "data/raw/fewshot_news/normal.jsonl",
+                 reason_output_dir: str = "data/processed/fewshot_reasons/normal",
+                ) -> None:
 
         match strategy:
             case "zero_shot":

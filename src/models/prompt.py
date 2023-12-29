@@ -239,11 +239,15 @@ class Prompt:
             self.output_instructions
         )
 
-    def few_shot_with_reason(self, n: int, example_path: str, output_dir: str) -> ChatPromptTemplate:
+    def few_shot_with_reason(self,
+                             n: int,
+                             example_path: str = "data/raw/fewshot_news/normal.jsonl",
+                             output_dir: str = "data/processed/fewshot_reasons/normal"
+                             ) -> ChatPromptTemplate:
         self.num = n
         _example_path = Path(example_path)
         _output_dir = Path(output_dir)
-        output_path = _output_dir / f"reason_example_{n}.jsonl"
+        output_path = _output_dir / f"{n}.jsonl"
 
         if not output_path.exists():
             logger.warning("reasoning example doesn't exist, start reasoning")
