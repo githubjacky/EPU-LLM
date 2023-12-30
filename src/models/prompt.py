@@ -1,8 +1,7 @@
-from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.manager import get_openai_callback
-from langchain.memory import ConversationBufferMemory
-from langchain.output_parsers import PydanticOutputParser
+from langchain_core.runnables.base import RunnableSequence
+from langchain_core.output_parsers import JsonOutputParser
 from langchain.prompts import FewShotChatMessagePromptTemplate
 from langchain.prompts.chat import ChatPromptTemplate, MessagesPlaceholder
 from langchain.prompts.loading import load_prompt
@@ -16,7 +15,7 @@ from tqdm import tqdm
 import time
 
 
-from utils import read_jsonl, format_handler, refresh_handler
+from utils import add_memory, read_jsonl, format_handler, log_init
 
 
 class ClassificationResult(BaseModel):
@@ -46,16 +45,16 @@ class ClassificationResultWithReason(BaseModel):
 
 
 class Prompt:
-    parser = PydanticOutputParser(pydantic_object=ClassificationResult)
+    parser = JsonOutputParser(pydantic_object=ClassificationResult)
     output_instructions = parser.get_format_instructions()
 
-    parser_with_reason = PydanticOutputParser(
+    parser_with_reason = JsonOutputParser(
         pydantic_object=ClassificationResultWithReason
     )
 
     output_instructions_with_reason = parser_with_reason.get_format_instructions()
 
-    question = "Should the news be excluded?"
+    question = "Question: Should the following news article be excluded when constructing EPU index ?"
 
     def __init__(self,
                  country: str = "Taiwan",
@@ -76,7 +75,7 @@ class Prompt:
             ChatPromptTemplate
             .from_messages([
                 ("system", self.system_message),
-                MessagesPlaceholder(variable_name = "chat_history"),
+                MessagesPlaceholder(variable_name = "history"),
                 ("human", self.human_message)
             ])
             .partial(
@@ -91,7 +90,7 @@ class Prompt:
             ChatPromptTemplate
             .from_messages([
                 ("system", self.system_message),
-                MessagesPlaceholder(variable_name = "chat_history"),
+                MessagesPlaceholder(variable_name = "history"),
                 ("human", self.human_message)]
             )
             .partial(
@@ -101,37 +100,32 @@ class Prompt:
         )
 
 
-    def reasoning_instance(self, chain: LLMChain, label: int, warning: str, i: int):
-        chain.memory = ConversationBufferMemory(
-            memory_key = "chat_history",
-            return_messages = True
-        )
+    def reasoning_instance(self, chain: RunnableSequence, label: int, warning: str, i: int):
+        _chain = add_memory(chain)
 
         instruction = f"In this scenario, the label is known. {warning}"
-        res = format_handler(chain, i, instruction)
-        j = 0
+        res = format_handler(_chain, i, instruction)
+        retry = 0
+        max_retry = 5
 
         while res.get('pred') != label:
-            time.sleep(2)
-
-            if res.get('pred') == -1 or j == 5:
+            if retry == max_retry:
                 logger.info(f"refresh the memory for the {i}th sample, inconsistent for: {j} times")
-                chain, res = refresh_handler(chain, instruction, i)
-                j = 1
+                _chain = add_memory(chain)
+                retry = 1
             else:
                 logger.info(f"incosistent reasoning for the {i}th sample, pred: {res['pred']}; label: {label}, re-generate")
-                j += 1
-                res = format_handler(chain, i, f'Incorrect classification. {warning}')
+                retry+= 1
+                res = format_handler(_chain, i, f'Incorrect classification. {warning}')
 
         return res
 
 
+
     def reasoning(self, n: int, example_path: Path, output_path: Path) -> Tuple[List[str], List[str]]:
 
-        log_file = Path(f"log/reasoning_{n}_{str(example_path).split('/')[-1]}.log")
-        if log_file.exists: log_file.unlink(missing_ok = True)
-        logger.remove()
-        logger.add(log_file, level = "INFO")
+        log_file_path = Path(f"log/reasoning_{n}_{str(example_path).split('/')[-1]}.log")
+        log_init(log_file_path)
         logging.getLogger("openai").setLevel(logging.WARNING)
 
         example_list = read_jsonl(example_path, n)
@@ -141,13 +135,13 @@ class Prompt:
         llm = ChatOpenAI(
             model = "gpt-3.5-turbo",
             temperature = 0.6,
-            request_timeout = 120
+            timeout = 120
         )
         chat_prompt_template = (
             ChatPromptTemplate
             .from_messages([
                 ("system", self.system_message),
-                MessagesPlaceholder(variable_name = "chat_history"),
+                MessagesPlaceholder(variable_name = "history"),
                 ("human", self.human_message),
             ])
             .partial(
@@ -164,9 +158,10 @@ class Prompt:
         with output_path.open("wb") as f:
             with get_openai_callback() as cb:
                 for i, news in enumerate(tqdm(news_set)):
-                    chain = LLMChain(
-                        llm = llm,
-                        prompt = chat_prompt_template.partial(news = news)
+                    chain = (
+                        chat_prompt_template.partial(news = news[i])
+                        | llm
+                        | self.parser_with_reason
                     )
                     label = labels[i]
                     res = self.reasoning_instance(
@@ -193,9 +188,9 @@ class Prompt:
         few_shot_example = [
             {
                 "news": article_example[i],
-                "response": response_example[i],
                 "correct_instructions": self.question,
                 "output_instructions": "",
+                "response": response_example[i],
             }
             for i in range(len(article_example))
         ]
@@ -214,7 +209,7 @@ class Prompt:
             .from_messages([
                 ("system", self.system_message),
                 few_shot_prompt,
-                MessagesPlaceholder(variable_name = "chat_history"),
+                MessagesPlaceholder(variable_name = "history"),
                 ("human", self.human_message),
             ])
             .partial(
@@ -262,5 +257,7 @@ class Prompt:
             response_example = read_jsonl(output_path)
 
         return self.__create_fewshot_prompt(
-            article_example, response_example, self.output_instructions_with_reason
+            article_example,
+            response_example,
+            self.output_instructions_with_reason
         )

@@ -1,11 +1,11 @@
 import hydra
 from loguru import logger
 import logging
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from pathlib import Path
 from prompt import Prompt
 
-from utils import env_setup
+from utils import env_setup, log_init
 from chatgpt import ChatGPT
 
 
@@ -24,21 +24,18 @@ def main(cfg: DictConfig):
     # data = json.loads(cfg.model.test_path.read_text())[0]
     test_data = cfg.model.test_data
     test_path = Path(cfg.data.raw) / test_data
-    if cfg.model.name == "ChatGPT":
-        clf = ChatGPT(
-            prompt,
-            cfg.model.strategy,
-            cfg.model.model,
-            cfg.model.temperature,
-            cfg.model.timeout,
-            # data
-            test_path,
-            cfg.model.few_shot_n_example,
-            f'{cfg.prompt.fewshot_news_path}/{cfg.prompt.reasoning_strategy}.jsonl',
-            f'{cfg.prompt.fewshot_reasons_path}/{cfg.prompt.reasoning_strategy}',
-        )
-    else:
-        pass
+    clf = ChatGPT(
+        prompt,
+        cfg.model.strategy,
+        cfg.model.model,
+        cfg.model.temperature,
+        cfg.model.timeout,
+        # data
+        test_path,
+        cfg.model.few_shot_n_example,
+        f'{cfg.prompt.fewshot_news_path}/{cfg.model.reasoning_strategy}.jsonl',
+        f'{cfg.prompt.fewshot_reasons_path}/{cfg.model.reasoning_strategy}',
+    )
 
     # cfg_detail = OmegaConf.to_object(cfg)
     # print("\nllm prediction parameters:\n")
@@ -47,6 +44,8 @@ def main(cfg: DictConfig):
 
     output_dir = Path(cfg.data.predict) / test_data
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    log_init(clf.log_file)
     logger.info("start predicting")
     clf.predict(output_dir)
 

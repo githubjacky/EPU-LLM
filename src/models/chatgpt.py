@@ -1,7 +1,6 @@
-from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
 from langchain.callbacks.manager import get_openai_callback
+from langchain_core.runnables.base import RunnableSequence
 from loguru import logger
 import mlflow
 import matplotlib.pyplot as plt
@@ -14,19 +13,18 @@ from sklearn.metrics import (
     ConfusionMatrixDisplay,
 )
 from tqdm import trange
-import time
 
-from utils import format_handler, refresh_handler, read_jsonl
+from utils import format_handler, read_jsonl, add_memory
 
 
 class ChatGPT:
     def __init__(self,
                  prompt: Prompt,
-                 strategy: str,
-                 model: str,
-                 temperature: float,
-                 timeout: float,
-                 data: Path,
+                 strategy: str = 'few_shot_with_reason',
+                 model: str = 'gpt-3.5-turbo-1106',
+                 temperature: float = 0.,
+                 timeout: float = 120,
+                 data: Path = Path('data/raw/test.jsonl'),
                  n_example: int = 6,
                  example_path: str = "data/raw/fewshot_news/normal.jsonl",
                  reason_output_dir: str = "data/processed/fewshot_reasons/normal",
@@ -54,7 +52,7 @@ class ChatGPT:
         self.llm = ChatOpenAI(
             model = model,
             temperature = temperature,
-            request_timeout = timeout
+            timeout = timeout
         )
         self.prompt_strategy = prompt_strategy
         self.output_parser = output_parser
@@ -71,80 +69,53 @@ class ChatGPT:
         )
         self.data = read_jsonl(data) if isinstance(data, Path) else data
 
-        log_file = Path(
-            '/'.join((
-                'log',
-                'chatgpt_predict',
-                self.input_name,
-                time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-            ))
-        )
-        self.log_file = log_file
+        self.reasoning_strategy = reason_output_dir.split('/')[-1]
+        self.filename = "_".join((
+            self.reasoning_strategy,
+            strategy,
+            str(n_example),
+            model
+        ))
+        self.log_file = Path(f'log/chatgpt/{self.filename}.log')
 
 
-    def predict_instance(self, chain: LLMChain, instruction: str, i: int):
-        chain.memory = ConversationBufferMemory(
-            memory_key = "chat_history",
-            return_messages = True
-        )
-        res = format_handler(chain, i, instruction, self.strategy)
-        if res.get('pred') == -1:
-            logger.info(f"change to gpt-3.5-turbo-16k, for the {i}th sample")
-            _, res = refresh_handler(chain, instruction, i, self.strategy)
+    def predict_instance(self, chain: RunnableSequence, instruction: str, i: int):
+        _chain = add_memory(chain)
+        res = format_handler(_chain, i, instruction, self.strategy)
 
         return res
 
 
     def predict(self, output_dir: Path) -> None:
-        logger.remove()
-        logger.add(self.log_file, level="INFO")
-        logger.info(f'model: {self.llm.model_name}')
-        logger.info(f'prompting strategy: {self.strategy}_{self.n_example}')
-
         labels = [i["label"] for i in self.data]
         news = [i["news"] for i in self.data]
+        output_path = output_dir / f'{self.filename}.jsonl'
 
-        output_path = output_dir / (
-            "_".join((self.strategy, str(self.n_example), self.model_name)) + ".jsonl"
-        )
+        if not output_path.exists():
+            _i = 0
+            n_news = len(news)
+        else:
+            _i = len(read_jsonl(output_path))
+            n_news = len(news) - _i
 
         with get_openai_callback() as cb:
-            if not output_path.exists():
-                reason = []
-                pred = []
-                with output_path.open('wb') as f:
-                    for i in trange(len(news), position = 0, leave = True):
-                        chain = LLMChain(
-                            llm = self.llm,
-                            prompt = self.prompt_strategy.partial(news = news[i]),
-                            # verbose = True
-                        )
-                        res = self.predict_instance(chain, self.prompt.question, i)
-                        pred.append(res['pred'])
-                        reason.append(res.get('reason'))
-                        f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
-                        # time.sleep(1)
-            else:
-                with output_path.open('ab') as f:
-                    _res = read_jsonl(output_path)
-                    reason = [i.get('reason') for i in _res]
-                    pred = [i.get('pred') for i in _res]
-                    _i = len(_res)
-                    for i in trange(len(news) - _i, position = 0, leave = True):
-                        chain = LLMChain(
-                            llm = self.llm,
-                            prompt = self.prompt_strategy.partial(news = news[i + _i]),
-                        )
-                        res = self.predict_instance(chain, self.prompt.question, i + _i)
-                        pred.append(res['pred'])
-                        reason.append(res.get('reason'))
-                        f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
-                        time.sleep(1)
+            with output_path.open('ab') as f:
+                for i in trange(n_news, position = 0, leave = True):
+                    chain = (
+                        self.prompt_strategy.partial(news = news[i])
+                        | self.llm
+                        | self.output_parser
+                    )
+                    res = self.predict_instance(chain, "", i + _i)
+                    f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
 
-            self.log_predict(cb, news, labels, pred, reason)
+        _res = read_jsonl(output_path)
+        reason = [i.get('reason') for i in _res]
+        pred = [i.get('pred') for i in _res]
+        self.log_predict(cb, news, labels, pred, reason, output_path)
 
 
-    def log_predict(self, cb, news, labels, pred, reason):
+    def log_predict(self, cb, news, labels, pred, reason, output_path):
         metric_dict = classification_report(labels, pred, output_dict = True)
         table_dict = (
             {
@@ -162,20 +133,21 @@ class ChatGPT:
             }
         )
 
-        exper = mlflow.set_experiment(f"EPU denoise_{self.input_name}")
+        exper = mlflow.set_experiment(f"EPU denoise {self.input_name}")
         with mlflow.start_run(
             experiment_id = exper.experiment_id,
-            run_name = "_".join((self.strategy, str(self.n_example), self.model_name)),
+            run_name = self.filename,
         ):
             mlflow.log_param("model", self.model_name)
             mlflow.log_param("few_shot_n_example", self.n_example)
             mlflow.log_param("used_tokens", cb.total_tokens)
             mlflow.log_param("prediction_strategy", self.strategy)
+            mlflow.log_param("reason_strategy", self.reasoning_strategy)
 
             if self.model_name[:2] == 'ft':
                 mlflow.log_param("epochs", self.model_name.split(':')[-2].split('-')[2])
                 mlflow.log_param("fine_tune_n_example", self.model_name.split(':')[-2].split('-')[0])
-                cost = 0.012*(cb.prompt_tokens/1000) + 0.016*(cb.completion_tokens/1000)
+                cost = 0.003*(cb.prompt_tokens/1000) + 0.006*(cb.completion_tokens/1000)
                 mlflow.log_param("cost", cost)
             else:
                 mlflow.log_param("fine_tune_n_example", 0)
@@ -189,7 +161,9 @@ class ChatGPT:
             cm = confusion_matrix(labels, pred, normalize="pred")
             disp = ConfusionMatrixDisplay(confusion_matrix=cm)
             disp.plot()
-            plt.savefig("confustion_matrix.png")
-
+            plt.savefig("confusion_matrix.png")
             mlflow.log_artifact("confusion_matrix.png")
+
+            mlflow.log_artifact(str(self.log_file))
+            mlflow.log_artifact(output_path)
             mlflow.log_table(table_dict, "news_pred_reason.json")

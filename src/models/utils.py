@@ -1,12 +1,12 @@
 from dotenv import load_dotenv
 from loguru import logger
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_core.runnables.base import RunnableSequence
 from pathlib import Path
 import orjson
-import openai
 from os import getenv
+from operator import itemgetter
 from typing import List, Dict
 
 
@@ -40,62 +40,57 @@ def read_jsonl(
     )
 
 
-def format_handler(
-    chain: LLMChain,
-    i: int,
-    instruction: str = "",
-    strategy: str = "few_shot_with_reason",
-):
-    while True:
+def log_init(log_file_path: Path, exist_ok = True):
+    if log_file_path.exists() and not exist_ok:
+        log_file_path.unlink()
+    logger.remove()
+    logger.add(log_file_path, level = "INFO")
+
+
+def add_memory(chain: RunnableSequence):
+    memory = ConversationBufferMemory(return_messages=True)
+    return (
+        RunnablePassthrough.assign(
+            history=RunnableLambda(memory.load_memory_variables) | itemgetter('history')
+        )
+        | chain
+    )
+
+
+def format_handler(chain: RunnableSequence,
+                   i: int, # the ith news
+                   instruction: str = "",
+                   strategy: str = "few_shot_with_reason",
+                   ):
+    retry = True
+    while retry:
         try:
-            res = orjson.loads(chain.run(correct_instructions=instruction))
+            res = chain.invoke({'correct_instructions': instruction})
             if (
                 strategy in ["few_shot_with_reason", "zero_shot_with_reason"]
                 and res.get("pred") is not None
                 and res.get("reason") is not None
             ):
-                break
-            elif strategy in ["few_shot", "zero_shot"] and res.get("pred") is not None:
-                break
+                retry = False
+            elif (
+                strategy in ["few_shot", "zero_shot"]
+                and res.get("pred") is not None
+            ):
+                retry = False
             else:
-                logger.info(
-                    f"formatting error(KeyError) for {i} th sample, re-generate"
-                )
-                instruction = " ".join(
-                    (
-                        "Your answer which is a json string don't",
-                        "have the specified key. Follow the schema carefully.",
-                    )
-                )
-                continue
+                logger.info(f"formatting error(KeyError) for {i} th sample, re-generate")
+                instruction = " ".join((
+                    "Your answer which is a json string don't",
+                    "have the specified key. Follow the schema carefully.",
+                ))
 
         except orjson.JSONDecodeError:
-            logger.info(
-                f"formatting error(JSONDecodeError) for {i} th sample, re-generate"
-            )
-            instruction = " ".join(
-                (
-                    "Formatting error. It might because",
-                    "not all single quotes have been escaped or",
-                    "the answering has been truncated.ry to answer precisely",
-                    "and reduce the number of token.",
-                )
-            )
-            continue
-
-        except openai.error.InvalidRequestError:
-            res = {"pred": -1}
-            break
+            logger.info(f"formatting error(JSONDecodeError) for {i} th sample, re-generate")
+            instruction = " ".join((
+                "Formatting error. It might because",
+                "not all single quotes have been escaped or",
+                "the answering has been truncated.ry to answer precisely",
+                "and reduce the number of token.",
+            ))
 
     return res
-
-
-def refresh_handler(
-    chain: LLMChain, instruction: str, i: int, strategy: str = "few_shot_with_reason"
-):
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    chain.memory = memory
-    chain.llm = ChatOpenAI(
-        model="gpt-3.5-turbo-16k", temperature=0.6, request_timeout=120
-    )
-    return chain, format_handler(chain, i, instruction, strategy)

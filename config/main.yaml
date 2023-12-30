@@ -11,8 +11,6 @@ defaults:
 prompt:
   system_message_template_path: prompt_template/system.json
   human_message_template_path: prompt_template/human.json
-  # normal, cot
-  reasoning_strategy: normal
   fewshot_news_path: data/raw/fewshot_news
   fewshot_reasons_path: data/processed/fewshot_reasons
 

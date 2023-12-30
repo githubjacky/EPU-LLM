@@ -7,8 +7,9 @@ temperature: 0.
 timeout: 120
 # zero_shot, zero_shot_with_reason, few_shot, few_shot_with_reason
 strategy: few_shot_with_reason
-few_shot_n_example: 8  # 8 perform the best
-test_data: test.jsonl
+reasoning_strategy: normal
+few_shot_n_example: 10
+test_data: test_100.jsonl
 
 fine_tune:
   input_dir: data/raw
