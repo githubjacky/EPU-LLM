@@ -2,3 +2,5 @@
     autostage = true
 ['remote "origin"']
     url = https://dagshub.com/githubjacky/EPU_denoise.dvc
+    read_timeout = 0
+

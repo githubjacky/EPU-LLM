@@ -9,7 +9,7 @@ timeout: 120
 strategy: few_shot_with_reason
 # cot, normal
 reasoning_strategy: normal
-few_shot_n_example: 6
+few_shot_n_example: 8
 test_data: test_100.jsonl
 verbose: False
 
