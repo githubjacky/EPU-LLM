@@ -13,16 +13,17 @@ from pathlib import Path
 from typing import List, Tuple
 from tqdm import tqdm
 import time
+import os, sys
+sys.path.append(os.path.abspath(f"{os.getcwd()}"))
 
-
-from utils import add_memory, read_jsonl, format_handler, log_init
+from src.models.utils import add_memory, read_jsonl, format_handler, log_init
 
 
 class ClassificationResult(BaseModel):
     pred: int = Field(
         description=" ".join((
-            "If the news should be excluded, return 1.",
-            "If the news should not be excluded, return 0.",
+            "If the news is not related to EPU, return 1.",
+            "If the news is related to EPU, return 0.",
 
         ))
     )
@@ -31,15 +32,14 @@ class ClassificationResult(BaseModel):
 class ClassificationResultWithReason(BaseModel):
     pred: int = Field(
         description=" ".join((
-            "If the news should be excluded, return 1.",
-            "If the news should not be excluded, return 0.",
+            "If the news is not related to EPU, return 1.",
+            "If the news is related to EPU, return 0.",
         ))
     )
     reason: str = Field(
         description=" ".join((
             "Reason for why or why not it should be excluded",
             "for constructing EPU index.",
-            "Use no more thant 30 words.",
         ))
     )
 
@@ -68,6 +68,9 @@ class Prompt:
         self.country = country
         self.system_message = system_prompt_template.template
         self.human_message = human_prompt_template.template
+
+        self.system_message_path = system_message_template_path
+        self.human_message_path = human_message_template_path
 
     @property
     def zero_shot(self) -> ChatPromptTemplate:
@@ -103,18 +106,19 @@ class Prompt:
     def reasoning_instance(self, chain: RunnableSequence, label: int, warning: str, i: int):
         _chain = add_memory(chain)
 
-        instruction = f"In this scenario, the label is known. {warning}"
+        instruction = f"In this scenario, the label is known. {warning}."
+        # instruction = "Please provide reasons for such classification and let the 'pred' key which is your classification be consistent with'reason' key."
         res = format_handler(_chain, i, instruction)
         retry = 0
         max_retry = 5
 
         while res.get('pred') != label:
             if retry == max_retry:
-                logger.info(f"refresh the memory for the {i}th sample, inconsistent for: {j} times")
+                logger.info(f"refresh the memory for the {i+1}th sample, exceed max_retry")
                 _chain = add_memory(chain)
                 retry = 1
             else:
-                logger.info(f"incosistent reasoning for the {i}th sample, pred: {res['pred']}; label: {label}, re-generate")
+                logger.info(f"incosistent reasoning for the {i+1}th sample, pred: {res['pred']}; label: {label}, re-generate")
                 retry+= 1
                 res = format_handler(_chain, i, f'Incorrect classification. {warning}')
 
@@ -123,7 +127,6 @@ class Prompt:
 
 
     def reasoning(self, n: int, example_path: Path, output_path: Path) -> Tuple[List[str], List[str]]:
-
         log_file_path = Path(f"log/reasoning_{n}_{str(example_path).split('/')[-1]}.log")
         log_init(log_file_path)
         logging.getLogger("openai").setLevel(logging.WARNING)
@@ -133,8 +136,8 @@ class Prompt:
         labels = [i.get("label") for i in example_list]
 
         llm = ChatOpenAI(
-            model = "gpt-3.5-turbo",
-            temperature = 0.6,
+            model = "gpt-4-1106-preview",
+            temperature = 0.,
             timeout = 120
         )
         chat_prompt_template = (
@@ -152,14 +155,14 @@ class Prompt:
 
         examples = []
         warning = {
-            1: 'This news should be excluded when constructing EPU index, and thus the "pred" key should be 1. Organize the information and generate reronable interpretations',
-            0: 'This news should not be excluded when constructing EPU index, and thus the "pred" key should be 0. Organize the information and generate reronable interpretations',
+            1: 'This news is not related to EPU, and thus the "pred" key of your response JSON string should be 1. Organize the information and give some clear interpretations on why it is s not related to EPU',
+            0: 'This news is related to EPU, and thus the "pred" key of your response JSON string should be 0. Organize the information and give me some interpretations on why it is related to EPU',
         }
         with output_path.open("wb") as f:
             with get_openai_callback() as cb:
                 for i, news in enumerate(tqdm(news_set)):
                     chain = (
-                        chat_prompt_template.partial(news = news[i])
+                        chat_prompt_template.partial(news = news)
                         | llm
                         | self.parser_with_reason
                     )
@@ -188,7 +191,7 @@ class Prompt:
         few_shot_example = [
             {
                 "news": article_example[i],
-                "correct_instructions": self.question,
+                "correct_instructions": "",
                 "output_instructions": "",
                 "response": response_example[i],
             }

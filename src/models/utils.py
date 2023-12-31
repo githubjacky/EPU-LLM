@@ -3,6 +3,7 @@ from loguru import logger
 from langchain.memory import ConversationBufferMemory
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.runnables.base import RunnableSequence
+from langchain.callbacks.tracers import ConsoleCallbackHandler
 from pathlib import Path
 import orjson
 from os import getenv
@@ -36,7 +37,8 @@ def read_jsonl(
     return (
         [orjson.loads(i) for i in Path(path).read_text().split("\n")[:n]]
         if not return_str
-        else [i for i in Path(path).read_text().split("\n")[:n]]
+        else
+        [i for i in Path(path).read_text().split("\n")[:n]]
     )
 
 
@@ -61,11 +63,20 @@ def format_handler(chain: RunnableSequence,
                    i: int, # the ith news
                    instruction: str = "",
                    strategy: str = "few_shot_with_reason",
+                   verbose = False
                    ):
     retry = True
     while retry:
         try:
-            res = chain.invoke({'correct_instructions': instruction})
+            res = (
+                chain.invoke(
+                    {'correct_instructions': instruction},
+                    config={'callbacks': [ConsoleCallbackHandler()]}
+                )
+                if verbose
+                else
+                chain.invoke({'correct_instructions': instruction})
+            )
             if (
                 strategy in ["few_shot_with_reason", "zero_shot_with_reason"]
                 and res.get("pred") is not None
@@ -78,14 +89,14 @@ def format_handler(chain: RunnableSequence,
             ):
                 retry = False
             else:
-                logger.info(f"formatting error(KeyError) for {i} th sample, re-generate")
+                logger.info(f"formatting error(KeyError) for {i+1} th sample, re-generate")
                 instruction = " ".join((
                     "Your answer which is a json string don't",
                     "have the specified key. Follow the schema carefully.",
                 ))
 
         except orjson.JSONDecodeError:
-            logger.info(f"formatting error(JSONDecodeError) for {i} th sample, re-generate")
+            logger.info(f"formatting error(JSONDecodeError) for {i+1} th sample, re-generate")
             instruction = " ".join((
                 "Formatting error. It might because",
                 "not all single quotes have been escaped or",

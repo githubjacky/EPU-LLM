@@ -1,15 +1,17 @@
+import os, sys
+sys.path.append(os.path.abspath(f"{os.getcwd()}"))
+
 import hydra
 from loguru import logger
 import logging
 from omegaconf import DictConfig
-from pathlib import Path
-from prompt import Prompt
 
-from utils import env_setup, log_init
-from chatgpt import ChatGPT
+from src.models.prompt import Prompt
+from src.models.utils import env_setup
+from src.models.openai import ChatGPT
 
 
-@hydra.main(config_path="../../config", config_name="main", version_base=None)
+@hydra.main(config_path="../config", config_name="main", version_base=None)
 def main(cfg: DictConfig):
     logger.info("setting up the environment variable")
     env_setup()
@@ -35,6 +37,7 @@ def main(cfg: DictConfig):
         cfg.model.few_shot_n_example,
         f'{cfg.prompt.fewshot_news_path}/{cfg.model.reasoning_strategy}.jsonl',
         f'{cfg.prompt.fewshot_reasons_path}/{cfg.model.reasoning_strategy}',
+        cfg.model.verbose
     )
 
     # cfg_detail = OmegaConf.to_object(cfg)
@@ -44,12 +47,7 @@ def main(cfg: DictConfig):
 
     output_dir = Path(cfg.data.predict) / test_data
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    log_init(clf.log_file)
-    logger.info("start predicting")
     clf.predict(output_dir)
-
-    logger.info("finish the process")
 
 
 if __name__ == "__main__":

@@ -7,9 +7,11 @@ temperature: 0.
 timeout: 120
 # zero_shot, zero_shot_with_reason, few_shot, few_shot_with_reason
 strategy: few_shot_with_reason
+# cot, normal
 reasoning_strategy: normal
-few_shot_n_example: 10
+few_shot_n_example: 6
 test_data: test_100.jsonl
+verbose: False
 
 fine_tune:
   input_dir: data/raw

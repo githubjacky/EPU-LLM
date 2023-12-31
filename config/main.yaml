@@ -4,7 +4,7 @@ hydra:
       dir: .
 
 defaults:
-    - model: chatgpt
+    - model: openai
     - process: download_korean
     - _self_
 

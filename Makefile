@@ -1,4 +1,4 @@
-.PHONY: dependencies env predict finetune mlflow jupyter dpredict dfinetune dmlflow djupyter
+.PHONY: dependencies env build reason predict compile finetune mlflow jupyter dreason dpredict dcompile dfinetune dmlflow djupyter
 
 # installing dependencies
 dependencies:
@@ -18,11 +18,18 @@ env: dependencies
 # 	@echo View API documentation... 
 # 	pdoc src --http localhost:8080	
 
+reason:
+	poetry run python script/reason.py
+
+compile:
+	poetry run python script/compile_prompt.py
+
 predict:
-	poetry run python src/models/predict.py
+	poetry run python script/predict.py
+
 
 finetune:
-	poetry run python src/models/fine_tune.py
+	poetry run python script/fine_tune.py
 
 mlflow:
 	poetry run mlflow ui -h 0.0.0.0 -p 5050
@@ -32,8 +39,18 @@ jupyter:
 
 
 # docker
+build:
+	docker compose build
+
+dreason:
+	docker compose run --rm llm-reason
+
+dcompile:
+	docker compose run --rm compile-prompt
+
 dpredict:
 	docker compose run --rm llm-predict
+
 
 dfinetune:
 	docker compose run --rm fine-tune

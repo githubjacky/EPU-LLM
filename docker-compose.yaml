@@ -2,7 +2,7 @@ version: '3.8'
 services:
   # scrap_bigkinds:
 
-  fetch_prompt:
+  llm-reason:
     image: 0jacky/epu_denoise:model
     build:
       dockerfile: ./dockerfile/model/Dockerfile
@@ -11,21 +11,40 @@ services:
         UID: $USERID
         GID: $GROUPID
         USER: $DOCKER_USER
-    container_name: fetch_prompt
+    container_name: llm-reason
+    environment:
+      - OPENAI_API_KEY=$OPENAI_API_KEY
+    volumes:
+      - $PWD/data:/home/$DOCKER_USER/epu_denoise/data
+      - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
+      - $PWD/config:/home/$DOCKER_USER/epu_denoise/config
+      - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
+      - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
+      - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
+    command: python /home/$DOCKER_USER/epu_denoise/script/reason.py
+
+
+  compile-prompt:
+    image: 0jacky/epu_denoise:model
+    build:
+      dockerfile: ./dockerfile/model/Dockerfile
+      context: .
+      args:
+        UID: $USERID
+        GID: $GROUPID
+        USER: $DOCKER_USER
+    container_name: compile-prompt
+    environment:
+      - OPENAI_API_KEY=$OPENAI_API_KEY
     volumes:
       - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
-      - $PWD/src/models/get_system_human_prompt_template.py:/home/$DOCKER_USER/epu_denoise/src/models/get_system_human_prompt_template.py
-    command: python /home/$DOCKER_USER/epu_denoise/src/models/get_system_human_prompt_template.py
+      - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
+      - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
+    command: python /home/$DOCKER_USER/epu_denoise/script/compile_prompt.py
+
 
   llm-predict:
     image: 0jacky/epu_denoise:model
-    build:
-      dockerfile: ./dockerfile/model/Dockerfile
-      context: .
-      args:
-        UID: $USERID
-        GID: $GROUPID
-        USER: $DOCKER_USER
     container_name: llm_precict
     environment:
       - OPENAI_API_KEY=$OPENAI_API_KEY
@@ -35,9 +54,10 @@ services:
       - $PWD/config:/home/$DOCKER_USER/epu_denoise/config
       - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
       - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
+      - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
       - $PWD/mlruns:/home/$DOCKER_USER/epu_denoise/mlruns
-      - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
-    command: python /home/$DOCKER_USER/epu_denoise/src/models/predict.py
+    command: python /home/$DOCKER_USER/epu_denoise/script/predict.py
+
 
   fine-tune:
     image: 0jacky/epu_denoise:model
@@ -50,24 +70,25 @@ services:
         - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
         - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
         - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
-        - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
-    command: python /home/$DOCKER_USER/epu_denoise/src/models/fine_tune.py
+        - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
+    command: python /home/$DOCKER_USER/epu_denoise/script/fine_tune.py
+
 
   # shell command: docker compose run --rm --service-ports mlflow_ui
   mlflow-ui:
     image: 0jacky/epu_denoise:model
-    container_name: mlflow_ui
+    container_name: mlflow-ui
     ports:
       - "5050:5050"
     volumes:
       - $PWD/mlruns:/home/$DOCKER_USER/epu_denoise/mlruns
-      - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
     command: mlflow ui -h 0.0.0.0 -p 5050
+
 
   # shell command: docker compose run --rm --service-ports jupyter
   jupyter-lab:
     image: 0jacky/epu_denoise:model
-    container_name: jupyter_lab
+    container_name: jupyter-lab
     environment:
       - OPENAI_API_KEY=$OPENAI_API_KEY
     ports:
@@ -77,5 +98,4 @@ services:
       - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
       - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
       - $PWD/notebooks:/home/$DOCKER_USER/epu_denoise/notebooks
-      - $PWD/Makefile:/home/$DOCKER_USER/epu_denoise/Makefile
     command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
