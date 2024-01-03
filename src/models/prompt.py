@@ -13,17 +13,15 @@ from pathlib import Path
 from typing import List, Tuple
 from tqdm import tqdm
 import time
-import os, sys
-sys.path.append(os.path.abspath(f"{os.getcwd()}"))
 
-from src.models.utils import add_memory, read_jsonl, format_handler, log_init
+from .utils import add_memory, read_jsonl, format_handler, log_init
 
 
 class ClassificationResult(BaseModel):
     pred: int = Field(
         description=" ".join((
-            "If the news is not related to EPU, return 1.",
-            "If the news is related to EPU, return 0.",
+            "If the news does not introduces the policy-related economic uncertainy of the specified country, return 1.",
+            "If the news introduces the policy-related economic uncertainy of the specified country, return 0.",
 
         ))
     )
@@ -32,16 +30,11 @@ class ClassificationResult(BaseModel):
 class ClassificationResultWithReason(BaseModel):
     pred: int = Field(
         description=" ".join((
-            "If the news is not related to EPU, return 1.",
-            "If the news is related to EPU, return 0.",
+            "If the news does not introduces the policy-related economic uncertainy of the specified country, return 1.",
+            "If the news introduces the policy-related economic uncertainy of the specified country, return 0.",
         ))
     )
-    reason: str = Field(
-        description=" ".join((
-            "Reason for why or why not it should be excluded",
-            "for constructing EPU index.",
-        ))
-    )
+    reason: str = Field(description="thourgh explanation of your classification response")
 
 
 class Prompt:
@@ -54,7 +47,8 @@ class Prompt:
 
     output_instructions_with_reason = parser_with_reason.get_format_instructions()
 
-    question = "Question: Should the following news article be excluded when constructing EPU index ?"
+    question = "Question: Does the news introduce the policy-related economic uncertainty?"
+
 
     def __init__(self,
                  country: str = "Taiwan",
@@ -107,7 +101,6 @@ class Prompt:
         _chain = add_memory(chain)
 
         instruction = f"In this scenario, the label is known. {warning}."
-        # instruction = "Please provide reasons for such classification and let the 'pred' key which is your classification be consistent with'reason' key."
         res = format_handler(_chain, i, instruction)
         retry = 0
         max_retry = 5
@@ -136,7 +129,7 @@ class Prompt:
         labels = [i.get("label") for i in example_list]
 
         llm = ChatOpenAI(
-            model = "gpt-4-1106-preview",
+            model = "gpt-3.5-turbo-1106",
             temperature = 0.,
             timeout = 120
         )
@@ -155,8 +148,8 @@ class Prompt:
 
         examples = []
         warning = {
-            1: 'This news is not related to EPU, and thus the "pred" key of your response JSON string should be 1. Organize the information and give some clear interpretations on why it is s not related to EPU',
-            0: 'This news is related to EPU, and thus the "pred" key of your response JSON string should be 0. Organize the information and give me some interpretations on why it is related to EPU',
+            1: 'This news does not introduce the policy-related economic uncertainy, and thus the "pred" key of your response JSON string should be 1. Organize the information and give me a clear explanation',
+            0: 'This news do introduce the policy-related economic uncertainy, and thus the "pred" key of your response JSON string should be 0. Organize the information and give me a clear explanation',
         }
         with output_path.open("wb") as f:
             with get_openai_callback() as cb:
@@ -191,7 +184,7 @@ class Prompt:
         few_shot_example = [
             {
                 "news": article_example[i],
-                "correct_instructions": "",
+                "correct_instructions": self.question,
                 "output_instructions": "",
                 "response": response_example[i],
             }

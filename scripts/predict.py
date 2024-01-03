@@ -5,6 +5,7 @@ import hydra
 from loguru import logger
 import logging
 from omegaconf import DictConfig
+from pathlib import Path
 
 from src.models.prompt import Prompt
 from src.models.utils import env_setup

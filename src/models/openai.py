@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import orjson
 from os import getenv
 import openai
-from prompt import Prompt
 from pathlib import Path
 from sklearn.metrics import (
     classification_report,
@@ -18,11 +17,9 @@ from tqdm import tqdm, trange
 import tiktoken
 import time
 from typing import List, Dict, Optional
-import os, sys
-sys.path.append(os.path.abspath(f"{os.getcwd()}"))
 
-from src.models.prompt import Prompt
-from src.models.utils import format_handler, read_jsonl, add_memory, log_init
+from .prompt import Prompt
+from .utils import format_handler, read_jsonl, add_memory, log_init
 
 
 
@@ -62,7 +59,7 @@ class ChatGPT:
         self.llm = ChatOpenAI(
             model=model,
             temperature=temperature,
-            timeout=timeout,
+            timeout=timeout
         )
         self.prompt_strategy = prompt_strategy
         self.output_parser = output_parser
@@ -116,7 +113,6 @@ class ChatGPT:
             n_news = len(news) - _i
             logger.info(f"restart the process form the {_i+1}th news")
 
-        instruction = "Try your best to organize the information from the examples above."
         with get_openai_callback() as cb:
             with output_path.open('ab') as f:
                 for i in trange(n_news, position = 0, leave = True):
@@ -125,7 +121,7 @@ class ChatGPT:
                         | self.llm
                         | self.output_parser
                     )
-                    res = self.predict_instance(chain, instruction, i + _i)
+                    res = self.predict_instance(chain, self.prompt.question, i + _i)
                     f.write(orjson.dumps(res, option = orjson.OPT_APPEND_NEWLINE))
 
         logger.info("finish the process")
@@ -201,8 +197,16 @@ class ChatGPT:
             cm = confusion_matrix(labels, pred, normalize="pred")
             disp = ConfusionMatrixDisplay(confusion_matrix=cm)
             disp.plot()
-            plt.savefig("confusion_matrix.png")
-            mlflow.log_artifact("confusion_matrix.png")
+            plt.savefig("confusion_matrix_prec.png")
+            mlflow.log_artifact("confusion_matrix_prec.png")
+
+            cm = confusion_matrix(labels, pred, normalize="true")
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+            disp.plot()
+            plt.savefig("confusion_matrix_recall.png")
+            mlflow.log_artifact("confusion_matrix_recall.png")
+
+
 
             mlflow.log_artifact(str(self.log_file))
             mlflow.log_artifact(output_path)

@@ -17,10 +17,17 @@ def main(cfg: DictConfig):
     )
 
     n = cfg.model.few_shot_n_example
+    output_file_path = Path(f'{cfg.prompt.fewshot_reasons_path}/{cfg.model.reasoning_strategy}/{n}.jsonl')
+    example_path = Path(f'{cfg.prompt.fewshot_news_path}/{cfg.model.reasoning_strategy}.jsonl')
+    log_file_path = Path(f'log/reasoning_{n}_{str(example_path).split("/")[-1]}.log')
+
+    if output_file_path.exists(): output_file_path.unlink()
+    if log_file_path.exists(): log_file_path.unlink()
+
     prompt.reasoning(
         n,
-        Path(f'{cfg.prompt.fewshot_news_path}/{cfg.model.reasoning_strategy}.jsonl'),
-        Path(f'{cfg.prompt.fewshot_reasons_path}/{cfg.model.reasoning_strategy}/{n}.jsonl'),
+        example_path,
+        output_file_path,
     )
 
 

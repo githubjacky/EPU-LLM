@@ -8,7 +8,7 @@
     "input_types": {},
     "output_parser": null,
     "partial_variables": {},
-    "template": "{correct_instructions}\nQuestion: Should the following article be excluded when constructing EPU index?\n\n{news}\n\nOutput Instructions:\n{output_instructions}\nBesides, don't forget to escape a single quote in the reason section.\n",
+    "template": "{correct_instructions}\n\n{news}\n\nOutput Instructions:\n{output_instructions}\nBesides, don't forget to escape a single quote in the reason section.\n",
     "template_format": "f-string",
     "validate_template": false,
     "_type": "prompt"

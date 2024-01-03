@@ -19,13 +19,13 @@ env: dependencies
 # 	pdoc src --http localhost:8080	
 
 reason:
-	poetry run python script/reason.py
+	poetry run python scripts/reason.py
 
 compile:
-	poetry run python script/compile_prompt.py
+	poetry run python scripts/compile_prompt.py
 
 predict:
-	poetry run python script/predict.py
+	poetry run python scripts/predict.py
 
 
 finetune:

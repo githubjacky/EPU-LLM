@@ -104,4 +104,8 @@ def format_handler(chain: RunnableSequence,
                 "and reduce the number of token.",
             ))
 
+        # AttributeError: 'NoneType' object has no attribute 'get'
+        except AttributeError:
+            continue
+
     return res

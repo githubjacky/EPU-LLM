@@ -21,7 +21,7 @@ services:
       - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
       - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
       - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
-    command: python /home/$DOCKER_USER/epu_denoise/script/reason.py
+    command: python /home/$DOCKER_USER/epu_denoise/scripts/reason.py
 
 
   compile-prompt:
@@ -40,7 +40,7 @@ services:
       - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
       - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
       - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
-    command: python /home/$DOCKER_USER/epu_denoise/script/compile_prompt.py
+    command: python /home/$DOCKER_USER/epu_denoise/scripts/compile_prompt.py
 
 
   llm-predict:
@@ -56,7 +56,7 @@ services:
       - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
       - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
       - $PWD/mlruns:/home/$DOCKER_USER/epu_denoise/mlruns
-    command: python /home/$DOCKER_USER/epu_denoise/script/predict.py
+    command: python /home/$DOCKER_USER/epu_denoise/scripts/predict.py
 
 
   fine-tune:
@@ -71,7 +71,7 @@ services:
         - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
         - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
         - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
-    command: python /home/$DOCKER_USER/epu_denoise/script/fine_tune.py
+    command: python /home/$DOCKER_USER/epu_denoise/scripts/fine_tune.py
 
 
   # shell command: docker compose run --rm --service-ports mlflow_ui
