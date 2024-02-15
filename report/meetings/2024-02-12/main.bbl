@@ -1,0 +1,18 @@
+\ifx\undefined\bysame
+\newcommand{\bysame}{\leavevmode\hbox to\leftmargin{\hrulefill\,\,}}
+\fi
+\begin{thebibliography}{xx}
+
+\harvarditem[Baker et al.]{Baker, Bloom and Davis}{2016}{Baker2016}
+{\bf Baker, Scott~R., Nicholas Bloom, and Steven~J. Davis}, ``Measuring {{Economic Policy Uncertainty}}*,'' {\it The Quarterly Journal of Economics}, November 2016, {\it 131} (4), 1593--1636.
+
+\harvarditem[Chen et al.]{Chen, Huang and Yang}{2024}{Chen2024}
+{\bf Chen, Chung-Chi, Yu-Lieh Huang, and Fang Yang}, ``Semantics Matter: {{An}} Empirical Study on Economic Policy Uncertainty Index,'' {\it International Review of Economics \& Finance}, January 2024, {\it 89}, 1286--1302.
+
+\harvarditem[Huang and Luk]{Huang and Luk}{2020}{Huang2020}
+{\bf Huang, Yun and Paul Luk}, ``Measuring Economic Policy Uncertainty in {{China}},'' {\it China Economic Review}, February 2020, {\it 59}, 101367.
+
+\harvarditem[Arbatli~Saxegaard et al.]{Arbatli~Saxegaard, Davis, Ito and Miake}{2022}{ArbatliSaxegaard2022}
+{\bf Saxegaard, Elif~C.~Arbatli, Steven~J. Davis, Arata Ito, and Naoko Miake}, ``Policy Uncertainty in {{Japan}},'' {\it Journal of the Japanese and International Economies}, June 2022, {\it 64}, 101192.
+
+\end{thebibliography}

@@ -1,62 +1,38 @@
-.PHONY: dependencies env build reason predict compile finetune mlflow jupyter dreason dpredict dcompile dfinetune dmlflow djupyter
-
-# installing dependencies
-dependencies:
-	poetry install
-	# poetry run pre-commit install
-
-# activate virtual environment
-env: dependencies
-	poetry shell
-
-# tests:
-# 	pytest
-#
-# docs:
-# 	@echo Save documentation to docs... 
-# 	pdoc src -o docs --force
-# 	@echo View API documentation... 
-# 	pdoc src --http localhost:8080	
-
-reason:
-	poetry run python scripts/reason.py
-
-compile:
-	poetry run python scripts/compile_prompt.py
-
-predict:
-	poetry run python scripts/predict.py
+.PHONY: first_build build clean pytest doc jupyter mlflow
 
 
-finetune:
-	poetry run python script/fine_tune.py
+first_build:
+	rm -f log/.gitkeep notebooks/.gitkeep
+	git init
+	mkdir -p data/raw data/processed mlruns
+	dvc commit
+	docker compose build
+	git add .
+	git commit -m "first commit"
+	git branch -M main
+	git remote add origin https://github.com/githubjacky/EPU-LLM.git
+	git push -u origin main
 
-mlflow:
-	poetry run mlflow ui -h 0.0.0.0 -p 5050
 
-jupyter:
-	poetry run jupyter lab --ip=0.0.0.0 --port=8888
-
-
-# docker
 build:
 	docker compose build
 
-dreason:
-	docker compose run --rm llm-reason
 
-dcompile:
-	docker compose run --rm compile-prompt
-
-dpredict:
-	docker compose run --rm llm-predict
+clean:
+	docker rmi --force 0jacky/EPU-LLM:latest
 
 
-dfinetune:
-	docker compose run --rm fine-tune
+pytest:
+	docker compose run --rm pytest
 
-dmlflow:
-	docker compose run --rm --service-ports mlflow-ui
 
-djupyter:
+doc:
+	docker compose run --rm doc
+
+
+jupyter:
 	docker compose run --rm --service-ports jupyter-lab
+
+
+mlflow:
+	docker compose run --rm --service-ports mlflow-ui

@@ -48,7 +48,9 @@ def main(cfg: DictConfig):
 
     output_dir = Path(cfg.data.predict) / test_data
     output_dir.mkdir(parents=True, exist_ok=True)
-    clf.predict(output_dir)
+    output_path = output_dir / f'{clf.filename}.jsonl'
+
+    clf.predict(output_path)
 
 
 if __name__ == "__main__":

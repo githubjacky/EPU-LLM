@@ -1,0 +1,308 @@
+% !TEX TS-program = xelatex
+\documentclass[12pt]{beamer}
+\input{lib/pkg}
+\input{lib/fonts}
+
+\title{\huge{Auto-EPU}}
+\author{Hsiu-Hsuan(Jacky) Yeh}
+\date{2024-01-29}
+
+\begin{document}
+\maketitle
+
+
+\begin{frame}{Prompt Template - Policy Category}
+You are one of the experienced \{country\} \{role\} who reads
+"economic newspaper" extensively. Please response only in \{language\}, and
+no need of English translation.
+\newline \newline
+Your task is to list \{n\_keywords\} common keywords that
+frequently appear in "policy-related"
+\{country\} news articles and satisfy the following 2 requirements.
+\newline
+\begin{enumerate}
+    \item each keyword must be a "simple word", and thus exclude the composite
+        word, especially various policy categories
+    \item do not include "economic" keyword
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}{input variables}
+\begin{itemize}
+    \item country
+    \begin{itemize}
+        \item Taiwan
+        \item US
+        \item China
+        \item Australia
+        \item Japan
+        \item South Korean
+    \end{itemize}
+    \item role
+    \begin{itemize}
+        \item newspaper reader
+        \item newspaper editor
+        \item economist
+    \end{itemize}
+    \item language: depends on country
+    \item n\_keywords: 20
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Workflow Of Constructing Policy Category Keyword Set}
+\begin{itemize}
+    \item in each paradigm of role:
+    \begin{enumerate}
+        \item query 5 times to get 5 subset of warmup keywords
+        \item segment all warmup keywords to a single word
+        \item calcuate the frequncy across subsets of each word
+        \item select word which survives major voting based on frequncy
+        \item restore composite word if necessary
+    \end{enumerate}
+    \item conduct major voting among different keyword set to construct the final keyword set
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Taiwan Warmup Keywod Subset}{Policy Cateogy, As A Newspaper Reader}
+% \textbf{\vspace{.1cm}
+\begin{table}[H]
+\renewcommand\arraystretch{1.4}
+% \caption{}
+% \label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{15pt}
+{
+    \fontsize{6}{6} \selectfont
+    \input{Tables/table1}
+}
+\end{center}
+\end{adjustwidth}
+\end{table}
+% }
+\end{frame}
+
+
+\begin{frame}{Taiwan Keyword Set Under Different Paradigm}
+% \textbf{\vspace{.1cm}
+\begin{table}[H]
+\renewcommand\arraystretch{1.6}
+% \caption{}
+% \label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{12pt}
+{
+    \fontsize{10}{8} \selectfont
+    \input{Tables/table2}
+}
+\end{center}
+\end{adjustwidth}
+\end{table}
+% }
+\end{frame}
+
+
+\begin{frame}{Keywords For Policy Category Across Countries}
+    {results from major voting}
+% \textbf{\vspace{.1cm}
+\begin{table}[H]
+\renewcommand\arraystretch{1.0}
+% \caption{}
+\label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{6pt}
+{
+    \fontsize{8}{8} \selectfont
+    \input{Tables/table3}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Notes: Taiwan's keywords are Referenced to 
+% }
+% \end{justify}
+\end{table}
+% }
+\end{frame}
+
+
+\begin{frame}{LLM Coverage Compared to Human Export}
+    \begin{itemize}
+        \item Taiwan: $\frac{3}{35}$, $8.57\%$
+        \item China: $\frac{4}{31}$, $12.90\%$
+        \item Japan: $\frac{2}{32}$, $6.25\%$
+        \item South Korea: $\frac{4}{23}$, $17.39\%$
+        \item US: $\frac{2}{8}$, $0.25\%$
+        \item Australia: $\frac{3}{13}$, $23.08\%$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{EPU Contruction Workflow}
+In the following sections, I use the same workflow to contruct the Economic and
+Uncertainty categories, and further apply on other contries.
+\end{frame}
+
+
+\begin{frame}{Keywords For Uncertainty Category, Taiwan}
+    {Prompt Under Newspaper Reader Paradigm}
+You are one of the experienced Taiwanese newspaper reader who reads ”economic
+newspaper” extensively. Please response only in Traditional Chinese, and no
+need of English translation. \newline
+
+Your task is to list 20 common keywords that frequently appear in
+"uncertainty-related" Taiwanese news articles and satisfy the following
+requirement.
+\begin{enumerate}
+    \item each keyword must be a ”simple word”, and thus exclude the composite word,
+        especially various uncertainty categories
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}{Keywords For Uncertainty Category, Taiwan}
+\begin{table}[H]
+\renewcommand\arraystretch{1.4}
+% \caption{}
+\label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{12pt}
+{
+    \fontsize{8}{8} \selectfont
+    \input{Tables/table4}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Notes:
+% }
+% \end{justify}
+\end{table}
+% }
+\end{frame}
+
+
+\begin{frame}{Keywords For Economic Category, Taiwan}
+    {Prompt Under Newspaper Reader Paradigm}
+You are one of the experienced Taiwanese newspaper reader who reads ”economic
+newspaper” extensively. Please response only in Traditional Chinese, and no
+need of English translation. \newline 
+
+Your task is to list 20 common keywords that frequently appear in
+"economic-related but not policy-related" Taiwanese news articles and satisfy
+the following requirement.
+\begin{enumerate}
+    \item each keyword must be a ”simple word”, and thus exclude the composite word,
+        especially various economic categories
+\end{enumerate}
+\end{frame}
+
+
+\begin{frame}{Keywords For Economic Category, Taiwan}
+\begin{table}[H]
+\renewcommand\arraystretch{1.3}
+% \caption{}
+\label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{13pt}
+{
+    \fontsize{8}{8} \selectfont
+    \input{Tables/table5}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Notes:
+% }
+% \end{justify}
+\end{table}
+% }
+\end{frame}
+
+\begin{frame}{Keywords For Economic Category, US}
+\begin{table}[H]
+\renewcommand\arraystretch{0.4}
+% \caption{}
+\label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{0.5pt}
+{
+    \fontsize{8}{8} \selectfont
+    \input{Tables/table6}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Notes:
+% }
+% \end{justify}
+\end{table}
+% }
+\end{frame}
+
+
+\begin{frame}{Keywords For Policy Category, US}
+\begin{table}[H]
+\renewcommand\arraystretch{1.}
+% \caption{}
+\label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{13pt}
+{
+    \fontsize{8}{8} \selectfont
+    \input{Tables/table7}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Notes:
+% }
+% \end{justify}
+\end{table}
+% }
+\end{frame}
+
+
+\begin{frame}{Keywords For Uncertainty Category, US}
+\begin{table}[H]
+\renewcommand\arraystretch{1.3}
+% \caption{}
+\label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{12pt}
+{
+    \fontsize{8}{8} \selectfont
+    \input{Tables/table8}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Notes:
+% }
+% \end{justify}
+\end{table}
+% }
+\end{frame}
+
+
+
+\begin{frame}{Reference}
+\end{frame}
+
+
+\end{document}

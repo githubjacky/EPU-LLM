@@ -1,0 +1,159 @@
+% ! TeX program = xelatex
+\documentclass[12pt]{beamer}
+\input{lib/pkg}
+\input{lib/fonts}
+\newcommand\setItemnumber[1]{\setcounter{enumi}{\numexpr#1-1\relax}}
+
+
+\title{\huge{Auto-EPU}}
+\author{Hsiu-Hsuan(Jacky) Yeh}
+\date{2024-02-12}
+\begin{document}
+\maketitle
+% \newpage% or \cleardoublepage
+% % \pdfbookmark[<level>]{<title>}{<dest>}
+% \pdfbookmark[section]{\contentsname}{toc}
+% \tableofcontents
+% \pagebreak
+
+
+\begin{frame}{Add Defition Of EPU Into Prompt}
+You are building indices of policy-related economic uncertainty based on
+\{ country \} newspaper coverage frequency, with the aim to capture
+uncertainty about who will make economic policy decisions, what economic policy
+actions will be undertaken and when, and the economic effects of policy actions
+(or inaction) – including uncertainties related to the economic ramifications
+of “non-economic” policy matters, e.g., military actions.
+
+The process of building the index is as follows: \newline
+1. Define three sets of keywords, E, P, U, containing keywords
+    corresponding to the economy, policy, and uncertainty, respectively. \newline
+2. Given a collection of news articles x, an article is considered related to
+    policy-related economic uncertainty if it "meets the following three
+    criteria simultaneously":
+\end{frame}
+
+
+\begin{frame}{Add Defition Of EPU Into Prompt}
+- Contains a word belonging to the E set \newline
+- Contains a word belonging to the P set \newline
+- Contains a word belonging to the U set \newline
+3. The index is calculated as the number of news articles related to
+    policy-related economic uncertainty divided by the total number of news
+    articles in x. \newline
+
+Your task is to "define and list \{n\_words\} keywords in bullet points for each E, P, U set". Eeach
+keyword must be a "simple and general word", and thus exclude the composite
+word, especially various uncertainty and policy categories.\newline
+
+Response in \{ language \}  and no need of English translation.
+\end{frame}
+
+
+\begin{frame}{Compared to Human Annotation}{Policy Category}
+\begin{table}[H]
+\renewcommand\arraystretch{1.4}
+% \caption{}
+% \label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{25pt}
+{
+    \fontsize{14}{14} \selectfont
+    \input{Tables/table1}
+}
+\end{center}
+\end{adjustwidth}
+\begin{justify}
+{\tiny
+    Note: this table show the converage percentage of LLM suggestion over
+    human experts. The referenced keywoeds of Taiwan(TW) come from
+    \cite{Chen2024}, China(CN) come from \cite{Huang2020}, Japan(JP) come from
+    \cite{ArbatliSaxegaard2022}, and US, Australia(AU), South Korea(KR) come
+    from \cite{Baker2016}
+}
+\end{justify}
+\end{table}
+\end{frame}
+
+
+\begin{frame}{Add Defition Of EPU Into Prompt With Self Consistency}
+You are building indices of policy-related economic uncertainty based on
+\{ country \} newspaper coverage frequency, with the aim to capture
+uncertainty about who will make economic policy decisions, what economic policy
+actions will be undertaken and when, and the economic effects of policy actions
+(or inaction) – including uncertainties related to the economic ramifications
+of “non-economic” policy matters, e.g., military actions.
+
+The process of building the index is as follows: \newline
+1. Define three sets of keywords, E, P, U, containing keywords
+    corresponding to the economy, policy, and uncertainty, respectively. \newline
+2. Given a collection of news articles x, an article is considered related to
+    policy-related economic uncertainty if it "meets the following three
+    criteria simultaneously":
+\end{frame}
+
+
+\begin{frame}{Add Defition Of EPU Into Prompt with Self Consistency}
+- Contains a word belonging to the E set \newline
+- Contains a word belonging to the P set \newline
+- Contains a word belonging to the U set \newline
+3. The index is calculated as the number of news articles related to
+    policy-related economic uncertainty divided by the total number of news
+    articles in x. \newline
+
+Please proceed with the following tasks step by step. \newline
+
+1. "Define and list \{ n\_words \} keywords in bullet points for each E, P, U
+    set". Each keyword must be a "simple and general word", and thus exclude
+    the composite word, especially various uncertainty and policy categories.
+\end{frame}
+
+
+\begin{frame}{Add Defition Of EPU Into Prompt with Self Consistency}
+2. Provide an example of a news article, including its title and content,
+    which is related to policy-related economic uncertainty. \newline
+3. Identify a word from the article in task 2 that belongs to the set
+    defined in task 1 as E \newline
+4. Identify a word from the article in task 2 that belongs to the set
+    defined in task 1 as P \newline
+5. Identify a word from the article in task 2 that belongs to the set
+    defined in task 1 as U \newline
+
+"Warning: The words listed in tasks 3, 4, and 5 must be consistent with those
+you defined in task 1; do not list words that you did not define in the
+E, P, U sets." \newline
+
+Response in \{ language \}  and no need of English translation.
+\end{frame}
+
+
+\begin{frame}{Compared to Human Annotation}{Policy Category}
+\begin{table}[H]
+\renewcommand\arraystretch{1.4}
+% \caption{}
+% \label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.0cm}{}
+\begin{center}
+\setlength{\tabcolsep}{10pt}
+{
+    \fontsize{12}{12} \selectfont
+    \input{Tables/table2}
+}
+\end{center}
+\end{adjustwidth}
+{\tiny
+    Note: this table show the converage percentage of LLM suggestion over
+    human experts. The referenced keywoeds of Taiwan(TW) come from
+    \cite{Chen2024}, China(CN) come from \cite{Huang2020}, Japan(JP) come from
+    \cite{ArbatliSaxegaard2022}, and US, Australia(AU), South Korea(KR) come
+    from \cite{Baker2016}
+    \cite{}
+}
+\end{table}
+\end{frame}
+
+\begin{frame}{References}
+\bibliography{/Users/jackyyeh/Library/texmf/bibtex/bib/Zotero.bib}
+\end{frame}
+\end{document}

@@ -1,0 +1,102 @@
+% ! TeX program = xelatex
+\documentclass[12pt]{beamer}
+\input{lib/pkg}
+\input{lib/fonts}
+
+\title{\huge{Auto-EPU}}
+\author{Hsiu-Hsuan(Jacky) Yeh}
+\date{2024-01-22}
+
+\begin{document}
+
+\maketitle
+% \newpage% or \cleardoublepage
+% % \pdfbookmark[<level>]{<title>}{<dest>}
+% \pdfbookmark[section]{\contentsname}{toc}
+% \tableofcontents
+% \pagebreak
+\begin{frame}{simle prompting}
+你是一個台灣的的經濟學家，主要的研究領域是台灣的經濟政策不確定指數(EPU index)。
+EPU index的創建過中必須先定義涵蓋"經濟"、"政策"、"不確定性"三個類別的關鍵字集，
+為了讓經濟政策不確定指數對於其他總體經濟變數更好的解釋及預測能力，請告訴我你認為這三個類別應該納入哪些關鍵字。
+\end{frame}
+
+\begin{frame}{response}
+\begin{itemize}
+    \item economic
+        \begin{itemize}
+            \item GDP (國內生產總值)
+            \item 就業率
+            \item 通脹率
+            \item 外匯匯率
+            \item 出口入口貿易
+            \item 投資水平
+        \end{itemize}
+    \item policy
+        \begin{itemize}
+            \item 貨幣政策
+            \item 財政政策
+            \item 稅收政策
+            \item 貿易政策
+            \item 產業政策
+            \item 社會福利政策
+        \end{itemize}
+    \item uncertainty
+        \begin{itemize}
+            \item 國際政治風險
+            \item 國內政治穩定性
+            \item 法規變化
+            \item 社會事件與抗議
+            \item 國際貿易緊張局勢
+            \item 自然災害風險
+        \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{step back prompting}
+    \begin{enumerate}
+        \item 請摘要台灣經濟政策不確定指數(EPU index)的創建流程嗎。
+        \item 就選擇關鍵字的這一步驟，請先列出經濟、政策、不確定性三個類別的關鍵字，並淘汰或新增關鍵字，使得EPU index能更對於其他總體變數有更好的解釋及預測能力。
+        \item 請具體列出淘汰或新增哪些關鍵字
+    \end{enumerate}
+
+    \begin{itemize}
+        \item economic
+        \begin{itemize}
+            \item 經濟成長
+            \item 失業率
+            \item 消費者物價指數（CPI）
+            \item 貨幣政策
+            \item 貿易平衡
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{response}
+    \begin{itemize}
+        \item policy
+        \begin{itemize}
+            \item 政府預算
+            \item 稅收政策
+            \item 貨幣政策
+            \item 貿易政策
+            \item 社會福利政策
+        \end{itemize}
+        \item uncertainty
+        \begin{itemize}
+            \item 法規變動
+            \item 國際政治不穩定性
+            \item 自然災害風險
+            \item 全球經濟景氣波動
+            \item 國際衝突風險
+        \end{itemize}
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Reference}
+    \href{https://arxiv.org/abs/2310.06117}{Take a Step Back: Evoking Reasoning via Abstraction in Large Language Models}
+\end{frame}
+
+
+\end{document}

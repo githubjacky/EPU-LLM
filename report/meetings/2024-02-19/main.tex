@@ -1,0 +1,117 @@
+% ! TeX program = xelatex
+\documentclass[11.5pt]{beamer}
+\input{lib/pkg}
+\input{lib/fonts}
+
+
+\title{\huge{Auto-EPU}}
+\author{Hsiu-Hsuan(Jacky) Yeh}
+\date{2024-02-19}
+\begin{document}
+\maketitle
+
+
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+
+\section{Test Fundamental Ability of ChatGPT4}
+
+
+\begin{frame}{Test Fundamental Ability of ChatGPT4}{Economic Category}
+You are a \{ nationality \}. List \{ n\_words \} the most common vocabularies highly related to economy of
+\{ country \}. You must consider the concept of word segmentation and output
+non-compound words, but rather simple and general words. \newline
+
+Output Instructions: \newline
+1. List in bullet points \newline
+2. Output only in \{ language \} and no need of English Translation
+\end{frame}
+
+
+\begin{frame}{Test Fundamental Ability of ChatGPT4}{Uncertainty Category}
+You are a Taiwanese helpful assistant that can list 20 the most common
+vocabularies describing economic-relevant "uncertainty". \newline
+
+"You must consider the concept of Word Segmentation and output non-compound
+words, but rather simple and common words." \newline
+
+Output Instructions: \newline
+1. List in bullet points \newline
+2. Output only in Traditional Chinese and no need of English Translation
+\end{frame}
+
+
+\section{Make Restriction on Corpos}
+\begin{frame}{Make Restriction on Corpos}{Economic Category}
+You are an experienced \{ country \} \{ role \} who extensively reads economic
+newspapers in \{ country \}. Response only in \{ language \}, and no
+need of English translation. \newline
+
+Proceed with the following tasks step by step. \newline
+
+1. List 20 of the most common "economic-related words" that appear in
+    economic news articles in \{ Taiwan \}, indicated by bullet points, and meet
+    the following requirement: \newline
+- Each keyword must be a "simple but common word", excluding compound words,
+    especially various categories of policy \newline
+
+2. For each economic keyword, show me the summary of a economic news
+    article in \{ country \} that contains the corresponding economic keyword
+\end{frame}
+
+
+\begin{frame}{Make Restriction on Corpos}{Policy Category}
+You are an experienced \{ country \} \{ role \} who extensively reads economic
+newspapers in \{ country \}. Response only in \{ language \}, and no
+need of English translation. \newline
+
+Proceed with the following tasks step by step. \newline
+
+1. List 20 of the most common "policy-related words" that appear in
+    economic news articles related to policy in \{ country \}, indicated by
+    bullet points, and meet the following requirements: \newline
+- Each keyword must be a "simple but common word", excluding compound words,
+    especially various categories of policy \newline
+- Do not include economic words
+
+2. For each policy keyword, show me the summary of a economic news
+    article related to policy in \{ country \} that contains the
+    corresponding policy keyword
+\end{frame}
+
+
+\begin{frame}{Make Restriction on Corpos}{Uncertainty Category}
+You are an experienced \{ country \} \{ role \} who extensively reads economic
+newspapers in \{ country \}. Response only in \{ language \}, and no
+need of English translation. \newline
+
+Proceed with the following tasks step by step. \newline
+
+1. List 20 of the most common "uncertainty-related words" that appear in
+    economic news articles related to uncertainty in \{ country \}, indicated
+    by bullet points, and meet the following requirement: \newline
+- Each keyword must be a "simple but common word", excluding compound words,
+    especially various categories of uncertainty \newline
+
+2. For each uncertainty keyword, show me the summary of a economic news
+    article related to uncertainty in \{ country \} that contains the
+    corresponding uncertainty keyword
+\end{frame}
+
+
+\section{Comparsion with Human annotation}
+
+
+\begin{frame}{Comparsion with Human annotation}
+\end{frame}
+
+
+\section{Reference}
+
+
+\begin{frame}{References}
+\bibliography{/Users/jackyyeh/Library/texmf/bibtex/bib/Zotero.bib}
+\end{frame}
+\end{document}

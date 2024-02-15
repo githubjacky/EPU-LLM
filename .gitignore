@@ -1,9 +1,7 @@
-# raw data
-
-mlruns.old/
-
-# log
-log/
+# dev environment
+dev/
+ref/
+report/fonts
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -57,7 +55,7 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
+# *.log
 
 # Sphinx documentation
 docs/_build/
@@ -99,4 +97,4 @@ target/
 
 # Hydra logs
 outputs
-/mlruns
+mlruns/

@@ -1,47 +1,44 @@
-# epu_denoise
-
-## Set up the virtual environment
-There are two ways for setting puthe virtual environment. One is
-[poetry](https://github.com/python-poetry/poetry), and the other is [docker](https://github.com/docker). For the detailed information on how to download and make it works, pleas check out the link.
-- docker: Dockerfile is under `dockerfile/`
-- install repo dependencies using poetry: `make dependencies`
+# EPU-LLM
+*Utilzing LLM to construct economic textual indicators.*
 
 
-## uee LLM to make prediction
-1. change the main configurations in `config/main.yaml`
-2. modify the model configuration file in *config/model/{model}.yaml*
-    - now there is only model available, which is the chatgpt
-    - default: gpt-3.5-turbo-1106
-3. run the command
+## Tools used in this project
+- [docker](https://www.docker.com/): runtime environment
+- [Poetry](https://python-poetry.org/docs/#installation): package management
+* [hydra](https://hydra.cc/): manage configuration files
+* [DVC](https://dvc.org/): data version control
+* [sphinx](https://www.sphinx-doc.org/en/master/): automatically create an API documentation for your project
+- [mlflow](https://mlflow.org/#core-concepts): experiment tracking
+
+
+## Set up the environment, and Install dependencies
+1. Install [docker](https://docs.docker.com/get-docker/)
+2. modify the `.env.example`, assigning the environment variables and rename it as `.env`
+3. create the docker image:
 ```bash
-# poetry venv
-make predict
-
-# docker
-make dpredict
+make build
+```
+To clean up the docker image:
+```sh
+make clean
 ```
 
-## fine-tune LLM
-1. change the main configurations in `config/main.yaml`
-2. modify the model configuration file in `config/model/{model}.yaml`
-    - now there is only model available, which is the chatgpt
-3. run the command
-```bash
-# poetry venv
-make finetune
 
-# docker
-make dfinetune
-```
+## Container Services
+```sh
+# unit test
+make pytest
 
-There are more functionalites provided by this repo such as the mlflow-ui, or
-jupyter lab editor, please check out the Makefile.
-```bash
-# poetry venv(mlflow-ui, jupyter lab)
-make mlflow
+# project documentation
+# after typing the command open docs/_build//html/index.html in the browser
+make doc
+
+# development IDE - Jupyter Lab
 make jupyter
 
-# docker(mlflow-ui, jupyter lab)
-make dmlflow
-make djupyter
+# MLflow tracking UI
+make mlflow
 ```
+
+
+## process scripts/notebooks

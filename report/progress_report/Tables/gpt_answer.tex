@@ -1,0 +1,31 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabularx}{\textwidth}{c c c}
+\hline
+
+\textbf{one of news in test set (label 1)} & 
+\textbf{CoT answer} & 
+\textbf{standard few-show answer}\\
+\hline
+〔編譯許世函／綜合報導〕中國央行週四晚間出乎外界意料宣布降息一碼（○．二五％）。美國聯準會（Fed）主席柏南克則表示，目前美國不會推出寬鬆政策；但副主席葉倫週三卻暗示，美國應推更多寬鬆政策。美、中兩國舉動，透露各國益發擔憂歐債危機惡化威脅到全球經濟成長。中國央行週四晚間宣布，自週五起下調金融機構一年期貸款基準利率一碼、至六．三一％，一年期存款基準利率下調一碼、至三．二五％，以支持經濟增長並推動金融系統改革，中國降息動作為二○○八年金融風暴以來首見。...the following news are omitted
+&
+First, the news is not directly related to Taiwan's economics as it mainly discusses the actions and statements of the central banks in China and the US. Second, the news is not related to Taiwan's policy. Finally, the news is related to uncertainty as it mentions concerns about the European debt crisis and the global economic growth. This news doesn't simultaneously mention economics, policy and uncertainty. Hence, it should be excluded when constructing Taiwan's EPU index.
+&
+The news is about the actions of central banks in China and the United States, which are not directly related to Taiwan's economics.
+\\
+\hline
+
+\textbf{one of news in test set (label 0)} & 
+\textbf{CoT answer} & 
+\textbf{standard few-show answer}\\
+\hline
+
+【陳文蔚╱台北報導】原以為大選紛擾將影響房地產市場，不過國有財產局發現，選後房市熱度不但沒降，標售成功案件還比去年同期多上1成，連決標價格也比去年高出2倍。國有財產局主任秘書蘇維成說：「政治干擾的短期影響慢慢解除。」總統大選過後，由於政治不確定因素升高，讓正值復甦期的房地產市場，蒙上陰影，連國產局也一度認為，政治因素可能對房地產出現短暫影響。...the following news are omitted
+&
+The news discusses the post-election impact on the real estate market, indicating that the market remains active with an increase in successful sales and higher bidding prices. This shows positive signs for the real estate market and contradicts the expectation of political interference. Hence, it should not be excluded when constructing Taiwan's EPU index.
+&
+The news provides information about the post-election real estate market in Taiwan, which is relevant to Taiwan's economy.
+\\
+\hline
+\end{tabularx}
+}

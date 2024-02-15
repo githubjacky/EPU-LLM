@@ -1,101 +1,65 @@
 version: '3.8'
 services:
-  # scrap_bigkinds:
-
-  llm-reason:
-    image: 0jacky/epu_denoise:model
+  build:
+    image: 0jacky/$PROJ:latest
+    container_name: build_container
     build:
-      dockerfile: ./dockerfile/model/Dockerfile
       context: .
       args:
-        UID: $USERID
-        GID: $GROUPID
+        UID: $UID
+        GID: $GID
         USER: $DOCKER_USER
-    container_name: llm-reason
-    environment:
-      - OPENAI_API_KEY=$OPENAI_API_KEY
+        PROJ: $PROJ
+
+
+  pytest:
+    image: 0jacky/$PROJ:latest
+    container_name: pytest
+    # environment:
     volumes:
-      - $PWD/data:/home/$DOCKER_USER/epu_denoise/data
-      - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
-      - $PWD/config:/home/$DOCKER_USER/epu_denoise/config
-      - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
-      - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
-      - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
-    command: python /home/$DOCKER_USER/epu_denoise/scripts/reason.py
+      - $PWD/config:/home/$DOCKER_USER/$PROJ/config
+      - $PWD/log:/home/$DOCKER_USER/$PROJ/log
+      - $PWD/data:/home/$DOCKER_USER/$PROJ/data
+      - $PWD/src:/home/$DOCKER_USER/$PROJ/src
+      - $PWD/tests:/home/$DOCKER_USER/$PROJ/tests
+    command: pytest
 
 
-  compile-prompt:
-    image: 0jacky/epu_denoise:model
-    build:
-      dockerfile: ./dockerfile/model/Dockerfile
-      context: .
-      args:
-        UID: $USERID
-        GID: $GROUPID
-        USER: $DOCKER_USER
-    container_name: compile-prompt
-    environment:
-      - OPENAI_API_KEY=$OPENAI_API_KEY
+  doc:
+    image: 0jacky/$PROJ:latest
+    container_name: documentation
     volumes:
-      - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
-      - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
-      - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
-    command: python /home/$DOCKER_USER/epu_denoise/scripts/compile_prompt.py
+        - $PWD/src:/home/$DOCKER_USER/$PROJ/src
+        - $PWD/docs:/home/$DOCKER_USER/$PROJ/docs
+    command: bash -c "rm -f docs/src* && sphinx-apidoc -o docs src && cd docs && make clean html"
 
 
-  llm-predict:
-    image: 0jacky/epu_denoise:model
-    container_name: llm_precict
-    environment:
-      - OPENAI_API_KEY=$OPENAI_API_KEY
-    volumes:
-      - $PWD/data:/home/$DOCKER_USER/epu_denoise/data
-      - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
-      - $PWD/config:/home/$DOCKER_USER/epu_denoise/config
-      - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
-      - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
-      - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
-      - $PWD/mlruns:/home/$DOCKER_USER/epu_denoise/mlruns
-    command: python /home/$DOCKER_USER/epu_denoise/scripts/predict.py
-
-
-  fine-tune:
-    image: 0jacky/epu_denoise:model
-    container_name: fine_tune
-    environment:
-      - OPENAI_API_KEY=$OPENAI_API_KEY
-    volumes:
-        - $PWD/data:/home/$DOCKER_USER/epu_denoise/data
-        - $PWD/config:/home/$DOCKER_USER/epu_denoise/config
-        - $PWD/log:/home/$DOCKER_USER/epu_denoise/log
-        - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
-        - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
-        - $PWD/script:/home/$DOCKER_USER/epu_denoise/script
-    command: python /home/$DOCKER_USER/epu_denoise/scripts/fine_tune.py
 
 
   # shell command: docker compose run --rm --service-ports mlflow_ui
   mlflow-ui:
-    image: 0jacky/epu_denoise:model
+    image: 0jacky/$PROJ:latest
     container_name: mlflow-ui
     ports:
       - "5050:5050"
     volumes:
-      - $PWD/mlruns:/home/$DOCKER_USER/epu_denoise/mlruns
+      - $PWD/mlruns:/home/$DOCKER_USER/$PROJ/mlruns
     command: mlflow ui -h 0.0.0.0 -p 5050
 
 
   # shell command: docker compose run --rm --service-ports jupyter
   jupyter-lab:
-    image: 0jacky/epu_denoise:model
+    image: 0jacky/$PROJ:latest
     container_name: jupyter-lab
-    environment:
-      - OPENAI_API_KEY=$OPENAI_API_KEY
+    # environment:
     ports:
       - "8888:8888"
     volumes:
-      - $PWD/data:/home/$DOCKER_USER/epu_denoise/data
-      - $PWD/prompt_template:/home/$DOCKER_USER/epu_denoise/prompt_template
-      - $PWD/src/models:/home/$DOCKER_USER/epu_denoise/src/models
-      - $PWD/notebooks:/home/$DOCKER_USER/epu_denoise/notebooks
+      - $PWD/config:/home/$DOCKER_USER/$PROJ/config
+      - $PWD/log:/home/$DOCKER_USER/$PROJ/log
+      - $PWD/data:/home/$DOCKER_USER/$PROJ/data
+      - $PWD/src:/home/$DOCKER_USER/$PROJ/src
+      - $PWD/notebooks:/home/$DOCKER_USER/$PROJ/notebooks
+      - $PWD/mlruns:/home/$DOCKER_USER/$PROJ/mlruns
+      - $PWD/scripts:/home/$DOCKER_USER/$PROJ/scripts
     command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
