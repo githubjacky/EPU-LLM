@@ -1,4 +1,0 @@
-\beamer@sectionintoc {1}{Test Fundamental Ability of ChatGPT4}{3}{0}{1}
-\beamer@sectionintoc {2}{Make Restriction on Corpos}{5}{0}{2}
-\beamer@sectionintoc {3}{Comparsion with Human annotation}{8}{0}{3}
-\beamer@sectionintoc {4}{Reference}{9}{0}{4}

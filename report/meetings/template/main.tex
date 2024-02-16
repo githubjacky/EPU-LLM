@@ -1,5 +1,6 @@
 % ! TeX program = xelatex
-\documentclass[12pt]{beamer}
+\documentclass[11.5pt]{beamer}
+\usetheme{metropolis}
 \input{lib/pkg}
 \input{lib/fonts}
 
@@ -9,18 +10,22 @@
 \date{}
 \begin{document}
 \maketitle
-% \newpage% or \cleardoublepage
-% % \pdfbookmark[<level>]{<title>}{<dest>}
-% \pdfbookmark[section]{\contentsname}{toc}
-% \tableofcontents
-% \pagebreak
+
+
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
 
 
 \begin{frame}{}
 \end{frame}
 
 
-\begin{frame}{References}
+\section{References}
+
+
+\begin{frame}[allowframebreaks]{}
+\renewcommand{\section}[2]{}%
 \bibliography{/Users/jackyyeh/Library/texmf/bibtex/bib/Zotero.bib}
 \end{frame}
 \end{document}
