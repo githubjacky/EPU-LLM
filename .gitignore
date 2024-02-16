@@ -19,6 +19,8 @@ report/fonts
 *.toc
 *.xdv
 report/meetings/**/*.log
+report/progress_report/**/*.log
+report/paper/**/*.log
 
 
 # Byte-compiled / optimized / DLL files
