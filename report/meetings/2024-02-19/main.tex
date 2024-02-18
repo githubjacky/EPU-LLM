@@ -1,5 +1,5 @@
 % ! TeX program = xelatex
-\documentclass[11.5pt]{beamer}
+\documentclass[12pt]{beamer}
 \usetheme{metropolis}
 \input{lib/pkg}
 \input{lib/fonts}
@@ -17,100 +17,463 @@
 \end{frame}
 
 
-\section{Talent}
+\section{Chat With PDF}
 
 
-\begin{frame}{Test Fundamental Ability of ChatGPT4}{Economic Category}
-You are a \{ nationality \}. List \{ n\_words \} the most common vocabularies highly related to economy of
-\{ country \}. You must consider the concept of word segmentation and output
-non-compound words, but rather simple and general words. \newline
+\begin{frame}{ChatGPT-4}
+    Upload the QJE version of the paper, \cite{Baker2016}
 
-Output Instructions: \newline
-1. List in bullet points \newline
-2. Output only in \{ language \} and no need of English Translation
+
+You are a Taiwanese Economist and plan to construct the EPU index of Taiwan.
+Define keywords in each E, P, U set
+
+Assistant:
+
+\begin{table}[H]
+\renewcommand\arraystretch{1.2}
+% \caption{}
+% \label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.1cm}{}
+\begin{center}
+\setlength{\tabcolsep}{30pt}
+{
+    \fontsize{10}{10} \selectfont
+    \input{Tables/table1}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Note:
+% }
+% \end{justify}
+\end{table}
 \end{frame}
 
 
-\begin{frame}{Test Fundamental Ability of ChatGPT4}{Uncertainty Category}
-You are a Taiwanese helpful assistant that can list 20 the most common
-vocabularies describing economic-relevant "uncertainty". \newline
-
-"You must consider the concept of Word Segmentation and output non-compound
-words, but rather simple and common words." \newline
-
-Output Instructions: \newline
-1. List in bullet points \newline
-2. Output only in Traditional Chinese and no need of English Translation
+\begin{frame}{Cluade.ai-beta}
+Note: only use the first 25 page of pdf from QJE
+\begin{table}[H]
+\renewcommand\arraystretch{1.2}
+% \caption{}
+% \label{Taiwan policy keywords}
+\begin{adjustwidth}{-0.1cm}{}
+\begin{center}
+\setlength{\tabcolsep}{30pt}
+{
+    \fontsize{10}{10} \selectfont
+    \input{Tables/table2}
+}
+\end{center}
+\end{adjustwidth}
+% \begin{justify}
+% {\tiny
+%     Note:
+% }
+% \end{justify}
+\end{table}
 \end{frame}
 
 
-\section{Make Restriction on Corpos}
-\begin{frame}{Make Restriction on Corpos}{Economic Category}
-You are an experienced \{ country \} \{ role \} who extensively reads economic
-newspapers in \{ country \}. Response only in \{ language \}, and no
-need of English translation. \newline
+\section{Generation Analysis of Self-Consistency}
 
-Proceed with the following tasks step by step. \newline
 
-1. List 20 of the most common "economic-related words" that appear in
-    economic news articles in \{ Taiwan \}, indicated by bullet points, and meet
-    the following requirement: \newline
-- Each keyword must be a "simple but common word", excluding compound words,
-    especially various categories of policy \newline
-
-2. For each economic keyword, show me the summary of a economic news
-    article in \{ country \} that contains the corresponding economic keyword
+\subsection{Word Cloud}
+\begin{frame}{Economy Category, ChatGPT-3.5}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig1.png}
+\end{figure}
 \end{frame}
 
 
-\begin{frame}{Make Restriction on Corpos}{Policy Category}
-You are an experienced \{ country \} \{ role \} who extensively reads economic
-newspapers in \{ country \}. Response only in \{ language \}, and no
-need of English translation. \newline
-
-Proceed with the following tasks step by step. \newline
-
-1. List 20 of the most common "policy-related words" that appear in
-    economic news articles related to policy in \{ country \}, indicated by
-    bullet points, and meet the following requirements: \newline
-- Each keyword must be a "simple but common word", excluding compound words,
-    especially various categories of policy \newline
-- Do not include economic words
-
-2. For each policy keyword, show me the summary of a economic news
-    article related to policy in \{ country \} that contains the
-    corresponding policy keyword
+\begin{frame}{Economy Category, ChatGPT-4}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig2.png}
+\end{figure}
 \end{frame}
 
 
-\begin{frame}{Make Restriction on Corpos}{Uncertainty Category}
-You are an experienced \{ country \} \{ role \} who extensively reads economic
-newspapers in \{ country \}. Response only in \{ language \}, and no
-need of English translation. \newline
-
-Proceed with the following tasks step by step. \newline
-
-1. List 20 of the most common "uncertainty-related words" that appear in
-    economic news articles related to uncertainty in \{ country \}, indicated
-    by bullet points, and meet the following requirement: \newline
-- Each keyword must be a "simple but common word", excluding compound words,
-    especially various categories of uncertainty \newline
-
-2. For each uncertainty keyword, show me the summary of a economic news
-    article related to uncertainty in \{ country \} that contains the
-    corresponding uncertainty keyword
+\begin{frame}{Economy Category, Claude.ai-beta}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig3.png}
+\end{figure}
 \end{frame}
 
 
-\section{Comparsion with Human Expert}
+\begin{frame}{Policy Category, ChatGPT-3.5}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig4.png}
+\end{figure}
+\end{frame}
 
 
-\begin{frame}{Policy Category Across Countries}
+\begin{frame}{Policy Category, ChatGPT-4}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig5.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Policy Category, Claude.ai-beta}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig6.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Category, ChatGPT-3.5}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig7.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Category, ChatGPT-4}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig8.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Category, Claude.ai-beta}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig9.png}
+\end{figure}
+\end{frame}
+
+
+\subsection{Accuracy}
+\begin{frame}{Accuracy}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig10.png}
+\end{figure}
+\end{frame}
+
+
+\section{Prompt For Different Categories/Paradigms}
+
+
+\begin{frame}
+\end{frame}
+
+
+\begin{frame}{Categories}
+\begin{itemize}
+    \item Economy
+    \begin{itemize}
+        \item the most common vocabularies that are related to economy
+    \end{itemize}
+    \item Policy
+    \begin{itemize}
+        \item the most common vocabularies that are related to policy
+    \end{itemize}
+    \item Uncertainty
+    \begin{itemize}
+        \item the most common vocabularies describing economic-relevant
+            uncertainty
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Categoty-Level Paradigms}
+\begin{itemize}
+    \item talent
+    \item newspaper copora
+    \begin{itemize}
+        \item newspaper reader
+        \item newspaper editor
+        \item economist
+    \end{itemize}
+    \item add definition
+    \item definition with SC
+\end{itemize}
 \end{frame}
 
 
 
-\begin{frame}{}
+\begin{frame}{Policy Relation}
+\begin{enumerate}
+    \item synonymous vocabularies which are nouns and related to "policy"
+    \item "government occupations" which are highly related to "national policy"
+    \item "government agency" which are highly related to "national policy"
+    \item synonymous vocabularies which are verbs and related to "policy"
+\end{enumerate}
+\end{frame}
+
+
+\section{Query Analysis}
+
+
+\subsection{Entropy}
+\begin{frame}{Policy Entropy, Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig11.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Policy Entropy, Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig12.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Entropy, Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig13.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Entropy, Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig14.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 1, Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig15.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 1, Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig16.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 2, Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig17.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 2, Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig18.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 3, Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig19.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 3, Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig20.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 4, Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig21.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Entropy Of Policy Relation 4, Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig22.png}
+\end{figure}
+\end{frame}
+
+
+\subsection{Similarity}
+\begin{frame}{Policy Similarity Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig23.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Policy Similarity Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig24.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Similarity Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig25.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Similarity Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig26.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Similarity Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig25.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Uncertainty Similarity Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig26.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 1 Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig27.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 1 Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig28.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 2 Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig29.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 2 Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig30.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 3 Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig31.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 3 Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig32.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 4 Among Models}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig33.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Similarity Of Policy Relation 4 Among Paradigms}
+\begin{figure}[H]
+% \caption{Economy Category}
+\centering
+\includegraphics[width=11.5cm]{Figures/fig34.png}
+\end{figure}
+\end{frame}
+
+
+\begin{frame}{Country-Level Comprehension, Literature}
+\begin{itemize}
+    \item Taiwan LLM
+    \item LLM-Eval
+\end{itemize}
+\end{frame}
+
+
+\section{References}
+
+
+\begin{frame}[allowframebreaks]{}
+\renewcommand{\section}[2]{}%
 \bibliography{/Users/jackyyeh/Library/texmf/bibtex/bib/Zotero.bib}
 \end{frame}
 \end{document}
